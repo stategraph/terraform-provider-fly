@@ -209,7 +209,7 @@ func TestMachineResource_invalidImage(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testMachineConfigWithURL_customApp(server.URL, "err-test-app"),
-				ExpectError: regexp.MustCompile("invalid[\\s]+image[\\s]+reference"),
+				ExpectError: regexp.MustCompile(`invalid\s+image\s+reference`),
 			},
 		},
 	})

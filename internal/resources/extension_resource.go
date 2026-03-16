@@ -117,12 +117,6 @@ type flyctlExtension struct {
 	Status string `json:"status"`
 }
 
-func getStringAttr(ctx context.Context, config tfsdk.Config, attrName string) (string, diag.Diagnostics) {
-	var val types.String
-	diags := config.GetAttribute(ctx, path.Root(attrName), &val)
-	return val.ValueString(), diags
-}
-
 func getStringAttrFromPlan(ctx context.Context, plan tfsdk.Plan, attrName string) (string, diag.Diagnostics) {
 	var val types.String
 	diags := plan.GetAttribute(ctx, path.Root(attrName), &val)
