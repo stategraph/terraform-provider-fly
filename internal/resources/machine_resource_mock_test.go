@@ -38,19 +38,19 @@ func TestMachineResource_lifecycle(t *testing.T) {
 		// App endpoints
 		case r.Method == "POST" && r.URL.Path == "/apps":
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-1", Name: "machine-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-1", Name: "machine-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "GET" && strings.HasPrefix(r.URL.Path, "/apps/machine-test-app") && !strings.Contains(r.URL.Path, "/machines"):
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-1", Name: "machine-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-1", Name: "machine-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "DELETE" && r.URL.Path == "/apps/machine-test-app":
 			w.WriteHeader(http.StatusNoContent)
 
 		// Machine create
 		case r.Method == "POST" && r.URL.Path == "/apps/machine-test-app/machines":
-			json.NewEncoder(w).Encode(machine)
+			_ = json.NewEncoder(w).Encode(machine)
 
 		// Machine get
 		case r.Method == "GET" && r.URL.Path == "/apps/machine-test-app/machines/mach-abc123" && r.URL.RawQuery == "":
-			json.NewEncoder(w).Encode(machine)
+			_ = json.NewEncoder(w).Encode(machine)
 
 		// Machine wait
 		case r.Method == "GET" && r.URL.Path == "/apps/machine-test-app/machines/mach-abc123/wait":
@@ -58,11 +58,11 @@ func TestMachineResource_lifecycle(t *testing.T) {
 
 		// Machine update
 		case r.Method == "POST" && r.URL.Path == "/apps/machine-test-app/machines/mach-abc123":
-			json.NewEncoder(w).Encode(machine)
+			_ = json.NewEncoder(w).Encode(machine)
 
 		// Machine lease
 		case r.Method == "POST" && r.URL.Path == "/apps/machine-test-app/machines/mach-abc123/lease":
-			json.NewEncoder(w).Encode(apimodels.Lease{Nonce: "lease-nonce-1", ExpiresAt: 9999999999})
+			_ = json.NewEncoder(w).Encode(apimodels.Lease{Nonce: "lease-nonce-1", ExpiresAt: 9999999999})
 		case r.Method == "DELETE" && r.URL.Path == "/apps/machine-test-app/machines/mach-abc123/lease":
 			w.WriteHeader(http.StatusOK)
 
@@ -77,7 +77,7 @@ func TestMachineResource_lifecycle(t *testing.T) {
 		default:
 			t.Logf("Unhandled: %s %s?%s", r.Method, r.URL.Path, r.URL.RawQuery)
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
 		}
 	}))
 	defer server.Close()
@@ -138,15 +138,15 @@ func TestMachineResource_withServices(t *testing.T) {
 		switch {
 		case r.Method == "POST" && r.URL.Path == "/apps":
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-svc", Name: "svc-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-svc", Name: "svc-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "GET" && r.URL.Path == "/apps/svc-test-app" && !strings.Contains(r.URL.Path, "/machines"):
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-svc", Name: "svc-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-svc", Name: "svc-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "DELETE" && r.URL.Path == "/apps/svc-test-app":
 			w.WriteHeader(http.StatusNoContent)
 		case r.Method == "POST" && r.URL.Path == "/apps/svc-test-app/machines":
-			json.NewEncoder(w).Encode(machine)
+			_ = json.NewEncoder(w).Encode(machine)
 		case r.Method == "GET" && r.URL.Path == "/apps/svc-test-app/machines/mach-svc123" && r.URL.RawQuery == "":
-			json.NewEncoder(w).Encode(machine)
+			_ = json.NewEncoder(w).Encode(machine)
 		case r.Method == "GET" && strings.Contains(r.URL.Path, "/wait"):
 			w.WriteHeader(http.StatusOK)
 		case r.Method == "POST" && strings.Contains(r.URL.Path, "/stop"):
@@ -156,7 +156,7 @@ func TestMachineResource_withServices(t *testing.T) {
 		default:
 			t.Logf("Unhandled: %s %s", r.Method, r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
 		}
 	}))
 	defer server.Close()
@@ -190,12 +190,12 @@ func TestMachineResource_invalidImage(t *testing.T) {
 		switch {
 		case r.Method == "POST" && r.URL.Path == "/apps":
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-err", Name: "err-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-err", Name: "err-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "GET" && r.URL.Path == "/apps/err-test-app":
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-err", Name: "err-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-err", Name: "err-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "POST" && strings.Contains(r.URL.Path, "/machines"):
 			w.WriteHeader(http.StatusUnprocessableEntity)
-			json.NewEncoder(w).Encode(map[string]string{"error": "invalid image reference"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid image reference"})
 		case r.Method == "DELETE":
 			w.WriteHeader(http.StatusNoContent)
 		default:

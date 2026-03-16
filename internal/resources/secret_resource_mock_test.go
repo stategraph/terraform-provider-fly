@@ -17,9 +17,9 @@ func TestSecretResource_lifecycle(t *testing.T) {
 		// App CRUD
 		case r.Method == "POST" && r.URL.Path == "/apps":
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(map[string]any{"id": "app-sec", "created_at": 1700000000000})
+			_ = json.NewEncoder(w).Encode(map[string]any{"id": "app-sec", "created_at": 1700000000000})
 		case r.Method == "GET" && r.URL.Path == "/apps/secret-test-app" && !strings.Contains(r.URL.Path, "/secrets"):
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "app-sec", "name": "secret-test-app", "status": "deployed",
 				"network": "default", "organization": map[string]any{"slug": "personal"},
 			})
@@ -28,14 +28,14 @@ func TestSecretResource_lifecycle(t *testing.T) {
 
 		// Set secret (POST /apps/{app}/secrets/{key})
 		case r.Method == "POST" && strings.HasPrefix(r.URL.Path, "/apps/secret-test-app/secrets/"):
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"name": "MY_SECRET", "value": "secret-value-1",
 				"digest": "abc123hash", "version": 1,
 			})
 
 		// List secrets (GET /apps/{app}/secrets)
 		case r.Method == "GET" && r.URL.Path == "/apps/secret-test-app/secrets":
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"secrets": []apimodels.Secret{
 					{Name: "MY_SECRET", Digest: "abc123hash", CreatedAt: "2024-01-01T00:00:00Z"},
 				},
@@ -48,7 +48,7 @@ func TestSecretResource_lifecycle(t *testing.T) {
 		default:
 			t.Logf("Unhandled: %s %s", r.Method, r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
 		}
 	}))
 	defer server.Close()

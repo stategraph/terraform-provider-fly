@@ -83,7 +83,7 @@ provider "fly" {
 func TestAppDataSource_read(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/apps/my-ds-app" {
-			json.NewEncoder(w).Encode(apimodels.App{
+			_ = json.NewEncoder(w).Encode(apimodels.App{
 				ID: "app-ds-1", Name: "my-ds-app", Organization: apimodels.AppOrg{Slug: "personal"},
 				Status: "deployed", Network: "default", Hostname: "my-ds-app.fly.dev",
 			})
@@ -116,7 +116,7 @@ data "fly_app" "test" {
 func TestMachineDataSource_read(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/apps/ds-machine-app/machines/mach-ds-1" {
-			json.NewEncoder(w).Encode(apimodels.Machine{
+			_ = json.NewEncoder(w).Encode(apimodels.Machine{
 				ID: "mach-ds-1", Name: "web-1", State: "started", Region: "iad",
 				InstanceID: "inst-ds-1", PrivateIP: "fdaa::99",
 				Config:    apimodels.MachineConfig{Image: "nginx:latest"},
@@ -153,7 +153,7 @@ data "fly_machine" "test" {
 func TestVolumeDataSource_read(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/apps/ds-vol-app/volumes/vol-ds-1" {
-			json.NewEncoder(w).Encode(apimodels.Volume{
+			_ = json.NewEncoder(w).Encode(apimodels.Volume{
 				ID: "vol-ds-1", Name: "data", Region: "iad", SizeGB: 10,
 				State: "created", Encrypted: true, Zone: "iad-2",
 				CreatedAt: "2024-01-01T00:00:00Z",
@@ -189,7 +189,7 @@ data "fly_volume" "test" {
 func TestCertificateDataSource_read(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/apps/ds-cert-app/certificates/example.com" {
-			json.NewEncoder(w).Encode(apimodels.Certificate{
+			_ = json.NewEncoder(w).Encode(apimodels.Certificate{
 				ID: "cert-ds-1", Hostname: "example.com", CheckStatus: "passing",
 				Source: "fly", CertificateAuthority: "lets_encrypt",
 				DNSValidationHostname: "_acme.example.com",
@@ -253,7 +253,7 @@ data "fly_ip_addresses" "test" {
 func TestAppsDataSource_read(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/apps" {
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"apps": []apimodels.App{
 					{ID: "app-1", Name: "app-one", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"},
 					{ID: "app-2", Name: "app-two", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"},
@@ -286,7 +286,7 @@ data "fly_apps" "test" {}
 func TestMachinesDataSource_read(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/apps/ds-machines-app/machines" {
-			json.NewEncoder(w).Encode([]apimodels.Machine{
+			_ = json.NewEncoder(w).Encode([]apimodels.Machine{
 				{ID: "mach-1", Name: "web-1", State: "started", Region: "iad", Config: apimodels.MachineConfig{Image: "nginx:latest"}, CreatedAt: "2024-01-01T00:00:00Z", UpdatedAt: "2024-01-01T00:00:00Z"},
 				{ID: "mach-2", Name: "web-2", State: "stopped", Region: "ord", Config: apimodels.MachineConfig{Image: "nginx:latest"}, CreatedAt: "2024-01-02T00:00:00Z", UpdatedAt: "2024-01-02T00:00:00Z"},
 			})
@@ -320,7 +320,7 @@ data "fly_machines" "test" {
 func TestVolumesDataSource_read(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/apps/ds-vols-app/volumes" {
-			json.NewEncoder(w).Encode([]apimodels.Volume{
+			_ = json.NewEncoder(w).Encode([]apimodels.Volume{
 				{ID: "vol-1", Name: "data", Region: "iad", SizeGB: 10, State: "created", Encrypted: true, CreatedAt: "2024-01-01T00:00:00Z"},
 			})
 			return
@@ -351,7 +351,7 @@ data "fly_volumes" "test" {
 func TestCertificatesDataSource_read(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/apps/ds-certs-app/certificates" {
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"certificates": []apimodels.Certificate{
 					{ID: "cert-1", Hostname: "example.com", CheckStatus: "passing", Source: "fly", CertificateAuthority: "lets_encrypt", CreatedAt: "2024-01-01T00:00:00Z"},
 				},
@@ -384,7 +384,7 @@ data "fly_certificates" "test" {
 func TestVolumeSnapshotsDataSource_read(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/apps/ds-snap-app/volumes/vol-1/snapshots" {
-			json.NewEncoder(w).Encode([]apimodels.VolumeSnapshot{
+			_ = json.NewEncoder(w).Encode([]apimodels.VolumeSnapshot{
 				{ID: "snap-1", Size: 1024, Status: "complete", CreatedAt: "2024-01-01T00:00:00Z"},
 			})
 			return
@@ -416,7 +416,7 @@ data "fly_volume_snapshots" "test" {
 func TestNetworkPoliciesDataSource_read(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/apps/ds-np-app/network_policies" {
-			json.NewEncoder(w).Encode([]apimodels.NetworkPolicy{
+			_ = json.NewEncoder(w).Encode([]apimodels.NetworkPolicy{
 				{
 					ID:       "pol-1",
 					Name:     "allow-http",
@@ -625,7 +625,7 @@ data "fly_tokens" "test" {
 func TestOIDCTokenDataSource_read(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" && r.URL.Path == "/tokens/oidc" {
-			json.NewEncoder(w).Encode(map[string]string{
+			_ = json.NewEncoder(w).Encode(map[string]string{
 				"token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.mock-token",
 			})
 			return

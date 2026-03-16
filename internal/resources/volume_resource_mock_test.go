@@ -28,21 +28,21 @@ func TestVolumeResource_lifecycle(t *testing.T) {
 		switch {
 		case r.Method == "POST" && r.URL.Path == "/apps":
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-vol", Name: "vol-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-vol", Name: "vol-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "GET" && r.URL.Path == "/apps/vol-test-app" && !strings.Contains(r.URL.Path, "/volumes"):
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-vol", Name: "vol-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-vol", Name: "vol-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "DELETE" && r.URL.Path == "/apps/vol-test-app":
 			w.WriteHeader(http.StatusNoContent)
 		case r.Method == "POST" && r.URL.Path == "/apps/vol-test-app/volumes":
-			json.NewEncoder(w).Encode(volume)
+			_ = json.NewEncoder(w).Encode(volume)
 		case r.Method == "GET" && r.URL.Path == "/apps/vol-test-app/volumes/vol-test-123":
-			json.NewEncoder(w).Encode(volume)
+			_ = json.NewEncoder(w).Encode(volume)
 		case r.Method == "DELETE" && r.URL.Path == "/apps/vol-test-app/volumes/vol-test-123":
 			w.WriteHeader(http.StatusOK)
 		default:
 			t.Logf("Unhandled: %s %s", r.Method, r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
 		}
 	}))
 	defer server.Close()
@@ -83,18 +83,18 @@ func TestVolumeResource_extend(t *testing.T) {
 		switch {
 		case r.Method == "POST" && r.URL.Path == "/apps":
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-ext", Name: "ext-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-ext", Name: "ext-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "GET" && r.URL.Path == "/apps/ext-test-app" && !strings.Contains(r.URL.Path, "/volumes"):
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-ext", Name: "ext-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-ext", Name: "ext-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "DELETE" && r.URL.Path == "/apps/ext-test-app":
 			w.WriteHeader(http.StatusNoContent)
 		case r.Method == "POST" && r.URL.Path == "/apps/ext-test-app/volumes":
-			json.NewEncoder(w).Encode(vol)
+			_ = json.NewEncoder(w).Encode(vol)
 		case r.Method == "GET" && r.URL.Path == "/apps/ext-test-app/volumes/vol-ext-123":
-			json.NewEncoder(w).Encode(vol)
+			_ = json.NewEncoder(w).Encode(vol)
 		case r.Method == "PUT" && strings.Contains(r.URL.Path, "/extend"):
 			currentSize = 2
-			json.NewEncoder(w).Encode(apimodels.ExtendVolumeResponse{
+			_ = json.NewEncoder(w).Encode(apimodels.ExtendVolumeResponse{
 				Volume:       apimodels.Volume{ID: "vol-ext-123", Name: "testdata", Region: "iad", SizeGB: 2, State: "created", Encrypted: true, CreatedAt: "2024-01-01T00:00:00Z"},
 				NeedsRestart: false,
 			})
@@ -103,7 +103,7 @@ func TestVolumeResource_extend(t *testing.T) {
 		default:
 			t.Logf("Unhandled: %s %s", r.Method, r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
 		}
 	}))
 	defer server.Close()

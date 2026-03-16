@@ -24,19 +24,19 @@ func TestVolumeSnapshotResource_lifecycle(t *testing.T) {
 		switch {
 		case r.Method == "POST" && r.URL.Path == "/apps":
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-snap", Name: "snap-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-snap", Name: "snap-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "GET" && r.URL.Path == "/apps/snap-test-app" && !strings.Contains(r.URL.Path, "/volumes"):
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-snap", Name: "snap-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-snap", Name: "snap-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "DELETE" && r.URL.Path == "/apps/snap-test-app":
 			w.WriteHeader(http.StatusNoContent)
 		case r.Method == "POST" && strings.HasSuffix(r.URL.Path, "/snapshots"):
-			json.NewEncoder(w).Encode(snapshot)
+			_ = json.NewEncoder(w).Encode(snapshot)
 		case r.Method == "GET" && strings.HasSuffix(r.URL.Path, "/snapshots"):
-			json.NewEncoder(w).Encode([]apimodels.VolumeSnapshot{snapshot})
+			_ = json.NewEncoder(w).Encode([]apimodels.VolumeSnapshot{snapshot})
 		default:
 			t.Logf("Unhandled: %s %s", r.Method, r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
 		}
 	}))
 	defer server.Close()

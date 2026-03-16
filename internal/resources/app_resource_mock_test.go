@@ -47,9 +47,9 @@ func TestAppResource_lifecycle(t *testing.T) {
 		switch {
 		case r.Method == "POST" && r.URL.Path == "/apps":
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(mockAppCreateJSON())
+			_ = json.NewEncoder(w).Encode(mockAppCreateJSON())
 		case r.Method == "GET" && r.URL.Path == "/apps/mock-app":
-			json.NewEncoder(w).Encode(mockAppGetJSON())
+			_ = json.NewEncoder(w).Encode(mockAppGetJSON())
 		case r.Method == "DELETE" && r.URL.Path == "/apps/mock-app":
 			w.WriteHeader(http.StatusNoContent)
 		default:
@@ -88,15 +88,15 @@ func TestAppResource_disappears(t *testing.T) {
 		switch {
 		case r.Method == "POST" && r.URL.Path == "/apps":
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(mockAppCreateJSON())
+			_ = json.NewEncoder(w).Encode(mockAppCreateJSON())
 		case r.Method == "GET" && r.URL.Path == "/apps/mock-app":
 			getCallCount++
 			if getCallCount > 1 {
 				w.WriteHeader(http.StatusNotFound)
-				json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
 				return
 			}
-			json.NewEncoder(w).Encode(mockAppGetJSON())
+			_ = json.NewEncoder(w).Encode(mockAppGetJSON())
 		case r.Method == "DELETE":
 			w.WriteHeader(http.StatusNoContent)
 		default:
@@ -123,7 +123,7 @@ func TestAppResource_disappears(t *testing.T) {
 func TestAppResource_createError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(map[string]string{"error": "app name already taken"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "app name already taken"})
 	}))
 	defer server.Close()
 

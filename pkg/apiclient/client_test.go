@@ -128,10 +128,10 @@ func TestRetryOn429(t *testing.T) {
 		attempts++
 		if attempts < 3 {
 			w.WriteHeader(http.StatusTooManyRequests)
-			json.NewEncoder(w).Encode(map[string]string{"error": "rate limited"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "rate limited"})
 			return
 		}
-		json.NewEncoder(w).Encode(apimodels.App{ID: "ok", Name: "ok"})
+		_ = json.NewEncoder(w).Encode(apimodels.App{ID: "ok", Name: "ok"})
 	}))
 	defer server.Close()
 
@@ -154,10 +154,10 @@ func TestRetryOn500(t *testing.T) {
 		attempts++
 		if attempts < 2 {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "internal"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "internal"})
 			return
 		}
-		json.NewEncoder(w).Encode(apimodels.App{ID: "ok", Name: "ok"})
+		_ = json.NewEncoder(w).Encode(apimodels.App{ID: "ok", Name: "ok"})
 	}))
 	defer server.Close()
 
@@ -173,7 +173,7 @@ func TestNoRetryOn422(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		attempts++
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(map[string]string{"error": "invalid"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid"})
 	}))
 	defer server.Close()
 
@@ -200,7 +200,7 @@ func TestCreateMachine(t *testing.T) {
 			t.Errorf("expected /apps/test-app/machines, got %s", r.URL.Path)
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(expected)
+		_ = json.NewEncoder(w).Encode(expected)
 	}))
 	defer server.Close()
 
@@ -230,7 +230,7 @@ func TestCreateVolume(t *testing.T) {
 		if r.URL.Path != "/apps/test-app/volumes" {
 			t.Errorf("expected /apps/test-app/volumes, got %s", r.URL.Path)
 		}
-		json.NewEncoder(w).Encode(expected)
+		_ = json.NewEncoder(w).Encode(expected)
 	}))
 	defer server.Close()
 
@@ -261,7 +261,7 @@ func TestExtendVolume(t *testing.T) {
 		if r.Method != "PUT" {
 			t.Errorf("expected PUT, got %s", r.Method)
 		}
-		json.NewEncoder(w).Encode(expected)
+		_ = json.NewEncoder(w).Encode(expected)
 	}))
 	defer server.Close()
 
@@ -281,7 +281,7 @@ func TestExtendVolume(t *testing.T) {
 func TestIsConflict(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusConflict)
-		json.NewEncoder(w).Encode(map[string]string{"error": "conflict"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "conflict"})
 	}))
 	defer server.Close()
 
@@ -315,7 +315,7 @@ func TestUserAgentHeader(t *testing.T) {
 		if ua != "terraform-provider-fly/1.0.0" {
 			t.Errorf("expected User-Agent=terraform-provider-fly/1.0.0, got %s", ua)
 		}
-		json.NewEncoder(w).Encode(apimodels.App{})
+		_ = json.NewEncoder(w).Encode(apimodels.App{})
 	}))
 	defer server.Close()
 

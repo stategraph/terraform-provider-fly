@@ -15,15 +15,15 @@ func TestEgressIPResource_lifecycle(t *testing.T) {
 		switch {
 		case r.Method == "POST" && r.URL.Path == "/apps":
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-eg", Name: "egress-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-eg", Name: "egress-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "GET" && r.URL.Path == "/apps/egress-test-app":
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-eg", Name: "egress-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-eg", Name: "egress-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "DELETE" && r.URL.Path == "/apps/egress-test-app":
 			w.WriteHeader(http.StatusNoContent)
 		default:
 			t.Logf("Unhandled: %s %s", r.Method, r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
 		}
 	}))
 	defer server.Close()

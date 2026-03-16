@@ -34,21 +34,21 @@ func TestNetworkPolicyResource_lifecycle(t *testing.T) {
 		switch {
 		case r.Method == "POST" && r.URL.Path == "/apps":
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-np", Name: "np-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-np", Name: "np-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "GET" && r.URL.Path == "/apps/np-test-app" && !strings.Contains(r.URL.Path, "/network_policies"):
-			json.NewEncoder(w).Encode(apimodels.App{ID: "app-np", Name: "np-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
+			_ = json.NewEncoder(w).Encode(apimodels.App{ID: "app-np", Name: "np-test-app", Organization: apimodels.AppOrg{Slug: "personal"}, Network: "default", Status: "deployed"})
 		case r.Method == "DELETE" && r.URL.Path == "/apps/np-test-app":
 			w.WriteHeader(http.StatusNoContent)
 		case r.Method == "POST" && r.URL.Path == "/apps/np-test-app/network_policies":
-			json.NewEncoder(w).Encode(policy)
+			_ = json.NewEncoder(w).Encode(policy)
 		case r.Method == "GET" && r.URL.Path == "/apps/np-test-app/network_policies/pol-abc123":
-			json.NewEncoder(w).Encode(policy)
+			_ = json.NewEncoder(w).Encode(policy)
 		case r.Method == "DELETE" && r.URL.Path == "/apps/np-test-app/network_policies/pol-abc123":
 			w.WriteHeader(http.StatusOK)
 		default:
 			t.Logf("Unhandled: %s %s", r.Method, r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
 		}
 	}))
 	defer server.Close()
