@@ -1,0 +1,79 @@
+---
+page_title: "Fly.io Provider"
+description: |-
+  The Fly.io provider manages infrastructure on the Fly.io platform — apps, machines, volumes, databases, networking, and extensions.
+---
+
+# Fly.io Provider
+
+The Fly.io provider manages infrastructure on the [Fly.io](https://fly.io) platform. It supports the full Fly.io feature set through two layers:
+
+- **REST API** — Apps, machines, volumes, secrets, certificates, network policies, volume snapshots
+- **flyctl CLI** — IPs, WireGuard, managed Postgres, Redis, Tigris storage, organizations, tokens, LiteFS, and extensions
+
+## Requirements
+
+- [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.11.0
+- A [Fly.io account](https://fly.io) with an API token
+- [flyctl](https://fly.io/docs/flyctl/install/) (required for Layer 2 resources)
+
+## Authentication
+
+Set your API token via environment variable (recommended):
+
+```bash
+export FLY_API_TOKEN="fo1_your_token_here"
+```
+
+Or generate one with the Fly.io CLI:
+
+```bash
+fly tokens create org
+```
+
+## Example Usage
+
+{{ tffile "examples/provider/provider.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Debugging: flyctl Command Logging
+
+Resources that use flyctl (Layer 2) log the exact commands they execute during `terraform apply`. To see them, enable debug logging:
+
+```bash
+TF_LOG=DEBUG terraform apply
+```
+
+You'll see log lines like:
+
+```
+executing flyctl command: command=flyctl ips allocate-v6 -a my-app
+flyctl command succeeded: command=flyctl ips allocate-v6 -a my-app stdout_length=42
+```
+
+This only appears during apply (and refresh/destroy) — `terraform plan` does not execute flyctl commands.
+
+## flyctl Commands by Resource
+
+The following table documents the exact flyctl commands each Layer 2 resource executes. This is useful for understanding what the provider does under the hood, auditing, or running commands manually.
+
+| Resource | Create | Read | Delete |
+|----------|--------|------|--------|
+| `fly_ip_address` | `flyctl ips allocate-v4/v6 -a APP [--shared] [--private] [--region REGION]` | `flyctl ips list -a APP --json` | `flyctl ips release ADDRESS -a APP` |
+| `fly_egress_ip` | `flyctl ips allocate-egress -a APP --yes` | `flyctl ips list -a APP --json` | `flyctl ips release-egress ADDRESS -a APP` |
+| `fly_wireguard_peer` | `flyctl wireguard create ORG REGION NAME --pubkey KEY --json` | `flyctl wireguard list ORG --json` | `flyctl wireguard remove ORG NAME --yes` |
+| `fly_wireguard_token` | `flyctl wireguard token create --org ORG --name NAME --json` | `flyctl wireguard token list ORG --json` | `flyctl wireguard token delete --org ORG --name NAME --yes` |
+| `fly_mpg_cluster` | `flyctl mpg create --name NAME --org ORG --region REGION [flags] --json` | `flyctl mpg status NAME --json` | `flyctl mpg destroy NAME --yes` |
+| `fly_mpg_database` | `flyctl mpg databases create --cluster-id ID --name NAME --json` | `flyctl mpg databases list --cluster-id ID --json` | _(removed from state only)_ |
+| `fly_mpg_user` | `flyctl mpg users create --cluster-id ID --username NAME --json` | `flyctl mpg users list --cluster-id ID --json` | `flyctl mpg users delete --cluster-id ID --username NAME --yes` |
+| `fly_mpg_attachment` | `flyctl mpg attach --cluster-id ID --app APP --json` | _(state preserved)_ | `flyctl mpg detach --cluster-id ID --app APP --yes` |
+| `fly_postgres_cluster` | `flyctl postgres create --name NAME --org ORG --region REGION [flags] --json` | `flyctl postgres list --json` | `flyctl postgres destroy NAME --yes` |
+| `fly_postgres_attachment` | `flyctl postgres attach PG_APP --app APP --json` | _(state preserved)_ | `flyctl postgres detach PG_APP --app APP --yes` |
+| `fly_redis` | `flyctl redis create --name NAME --org ORG --region REGION [flags] --json` | `flyctl redis status NAME --json` | `flyctl redis destroy NAME --yes` |
+| `fly_tigris_bucket` | `flyctl storage create --name NAME --org ORG [flags] --json` | `flyctl storage status NAME --json` | `flyctl storage destroy NAME --yes` |
+| `fly_token` | `flyctl tokens create TYPE [--app APP] [--org ORG] --json` | `flyctl tokens list --json` | `flyctl tokens revoke ID --yes` |
+| `fly_org` | `flyctl orgs create NAME --json` | `flyctl orgs show SLUG --json` | `flyctl orgs delete SLUG --yes` |
+| `fly_org_member` | `flyctl orgs invite ORG EMAIL` | _(state preserved)_ | `flyctl orgs remove ORG EMAIL --yes` |
+| `fly_litefs_cluster` | `flyctl litefs-cloud clusters create [flags] --json` | `flyctl litefs-cloud clusters list --json` | `flyctl litefs-cloud clusters destroy NAME --yes` |
+| `fly_ext_*` | `flyctl ext TYPE create --name NAME [flags] --json` | `flyctl ext TYPE status NAME --json` | `flyctl ext TYPE destroy NAME --yes` |
