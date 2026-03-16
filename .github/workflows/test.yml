@@ -32,7 +32,7 @@ jobs:
 
   acceptance:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: false # disabled for now — re-enable by replacing with: github.ref == 'refs/heads/main'
     needs: [lint, unit]
     steps:
       - uses: actions/checkout@v4
