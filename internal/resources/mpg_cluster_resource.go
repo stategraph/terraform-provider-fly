@@ -123,6 +123,7 @@ func (r *mpgClusterResource) Configure(_ context.Context, req resource.Configure
 }
 
 func (r *mpgClusterResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.MPGClusterResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -149,7 +150,7 @@ func (r *mpgClusterResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	var result flyctlMPGCluster
-	err := r.flyctl.RunJSON(ctx, &result, args...)
+	err := r.flyctl.RunJSONMut(ctx, &result, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating MPG cluster", err.Error())
 		return
@@ -182,17 +183,19 @@ func (r *mpgClusterResource) Read(ctx context.Context, req resource.ReadRequest,
 }
 
 func (r *mpgClusterResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	resp.Diagnostics.AddError("Update not supported", "All attributes of fly_mpg_cluster require replacement.")
 }
 
 func (r *mpgClusterResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var state models.MPGClusterResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.flyctl.Run(ctx, "mpg", "destroy", state.Name.ValueString(), "--yes")
+	_, err := r.flyctl.RunMut(ctx, "mpg", "destroy", state.Name.ValueString(), "--yes")
 	if err != nil {
 		if flyctl.IsNotFound(err) {
 			return

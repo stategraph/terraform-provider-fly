@@ -53,12 +53,38 @@ func (r *ExecRunner) Run(ctx context.Context, args []string, env []string) (stdo
 	return stdout, stderr, 0, nil
 }
 
+// DryRunError is returned when the executor is in dry-run mode instead of executing the command.
+type DryRunError struct {
+	Command string
+}
+
+func (e *DryRunError) Error() string {
+	return fmt.Sprintf("[dry-run] would execute: %s", e.Command)
+}
+
+// IsDryRun returns true if the error is a DryRunError.
+func IsDryRun(err error) bool {
+	_, ok := err.(*DryRunError)
+	return ok
+}
+
 // Executor runs flyctl commands.
 type Executor struct {
-	binaryPath string
-	token      string
-	runner     CommandRunner
-	mu         sync.Mutex
+	binaryPath     string
+	token          string
+	runner         CommandRunner
+	mu             sync.Mutex
+	DryRun         bool
+	dryRunMessages []string
+}
+
+// FlushDryRunMessages returns and clears accumulated dry-run messages.
+func (e *Executor) FlushDryRunMessages() []string {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	msgs := e.dryRunMessages
+	e.dryRunMessages = nil
+	return msgs
 }
 
 // NewExecutor creates a new flyctl executor.
@@ -81,8 +107,17 @@ func NewExecutorWithRunner(token string, runner CommandRunner) *Executor {
 
 // RunJSON executes a flyctl command, appends --json, and unmarshals the JSON output into target.
 func (e *Executor) RunJSON(ctx context.Context, target any, args ...string) error {
+	return e.runJSON(ctx, false, target, args...)
+}
+
+// RunJSONMut is like RunJSON but respects dry-run mode. Use for mutating operations (create/update/delete).
+func (e *Executor) RunJSONMut(ctx context.Context, target any, args ...string) error {
+	return e.runJSON(ctx, true, target, args...)
+}
+
+func (e *Executor) runJSON(ctx context.Context, mut bool, target any, args ...string) error {
 	args = append(args, "--json")
-	result, err := e.Run(ctx, args...)
+	result, err := e.run(ctx, mut, args...)
 	if err != nil {
 		return err
 	}
@@ -96,6 +131,15 @@ func (e *Executor) RunJSON(ctx context.Context, target any, args ...string) erro
 
 // Run executes a flyctl command and returns the result.
 func (e *Executor) Run(ctx context.Context, args ...string) (*Result, error) {
+	return e.run(ctx, false, args...)
+}
+
+// RunMut is like Run but respects dry-run mode. Use for mutating operations (create/update/delete).
+func (e *Executor) RunMut(ctx context.Context, args ...string) (*Result, error) {
+	return e.run(ctx, true, args...)
+}
+
+func (e *Executor) run(ctx context.Context, mut bool, args ...string) (*Result, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -107,6 +151,13 @@ func (e *Executor) Run(ctx context.Context, args ...string) (*Result, error) {
 	env := e.buildEnv()
 
 	cmdStr := strings.Join(fullArgs, " ")
+
+	if mut && e.DryRun {
+		tflog.Warn(ctx, "[dry-run] would execute flyctl command", map[string]any{"command": cmdStr})
+		e.dryRunMessages = append(e.dryRunMessages, cmdStr)
+		return &Result{Stdout: []byte("{}"), ExitCode: 0}, nil
+	}
+
 	tflog.Debug(ctx, "executing flyctl command", map[string]any{"command": cmdStr})
 
 	stdout, stderr, exitCode, err := e.runner.Run(ctx, fullArgs, env)

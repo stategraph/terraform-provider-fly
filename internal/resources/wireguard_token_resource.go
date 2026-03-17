@@ -78,6 +78,7 @@ func (r *wireGuardTokenResource) Configure(_ context.Context, req resource.Confi
 }
 
 func (r *wireGuardTokenResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.WireGuardTokenResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -88,7 +89,7 @@ func (r *wireGuardTokenResource) Create(ctx context.Context, req resource.Create
 	name := plan.Name.ValueString()
 
 	var result flyctlWireGuardToken
-	err := r.flyctl.RunJSON(ctx, &result, "wireguard", "token", "create", "--org", orgSlug, "--name", name)
+	err := r.flyctl.RunJSONMut(ctx, &result, "wireguard", "token", "create", "--org", orgSlug, "--name", name)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating WireGuard token", err.Error())
 		return
@@ -132,17 +133,19 @@ func (r *wireGuardTokenResource) Read(ctx context.Context, req resource.ReadRequ
 }
 
 func (r *wireGuardTokenResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	resp.Diagnostics.AddError("Update not supported", "All attributes of fly_wireguard_token require replacement.")
 }
 
 func (r *wireGuardTokenResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var state models.WireGuardTokenResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.flyctl.Run(ctx, "wireguard", "token", "delete", "--org", state.OrgSlug.ValueString(), "--name", state.Name.ValueString(), "--yes")
+	_, err := r.flyctl.RunMut(ctx, "wireguard", "token", "delete", "--org", state.OrgSlug.ValueString(), "--name", state.Name.ValueString(), "--yes")
 	if err != nil {
 		resp.Diagnostics.AddError("Error deleting WireGuard token", err.Error())
 	}

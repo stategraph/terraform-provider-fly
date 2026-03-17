@@ -73,13 +73,14 @@ func (r *orgMemberResource) Configure(_ context.Context, req resource.ConfigureR
 }
 
 func (r *orgMemberResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.OrgMemberResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.flyctl.Run(ctx, "orgs", "invite", plan.Org.ValueString(), plan.Email.ValueString())
+	_, err := r.flyctl.RunMut(ctx, "orgs", "invite", plan.Org.ValueString(), plan.Email.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error inviting organization member", err.Error())
 		return
@@ -102,17 +103,19 @@ func (r *orgMemberResource) Read(ctx context.Context, req resource.ReadRequest, 
 }
 
 func (r *orgMemberResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	resp.Diagnostics.AddError("Update not supported", "All attributes of fly_org_member require replacement.")
 }
 
 func (r *orgMemberResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var state models.OrgMemberResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.flyctl.Run(ctx, "orgs", "remove", state.Org.ValueString(), state.Email.ValueString(), "--yes")
+	_, err := r.flyctl.RunMut(ctx, "orgs", "remove", state.Org.ValueString(), state.Email.ValueString(), "--yes")
 	if err != nil {
 		if flyctl.IsNotFound(err) {
 			return

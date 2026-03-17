@@ -93,6 +93,7 @@ func (r *tigrisBucketResource) Configure(_ context.Context, req resource.Configu
 }
 
 func (r *tigrisBucketResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.TigrisBucketResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -110,7 +111,7 @@ func (r *tigrisBucketResource) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	var result flyctlTigrisBucket
-	err := r.flyctl.RunJSON(ctx, &result, args...)
+	err := r.flyctl.RunJSONMut(ctx, &result, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating Tigris bucket", err.Error())
 		return
@@ -143,6 +144,7 @@ func (r *tigrisBucketResource) Read(ctx context.Context, req resource.ReadReques
 }
 
 func (r *tigrisBucketResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.TigrisBucketResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -161,7 +163,7 @@ func (r *tigrisBucketResource) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	var result flyctlTigrisBucket
-	err := r.flyctl.RunJSON(ctx, &result, args...)
+	err := r.flyctl.RunJSONMut(ctx, &result, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating Tigris bucket", err.Error())
 		return
@@ -172,13 +174,14 @@ func (r *tigrisBucketResource) Update(ctx context.Context, req resource.UpdateRe
 }
 
 func (r *tigrisBucketResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var state models.TigrisBucketResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.flyctl.Run(ctx, "storage", "destroy", state.Name.ValueString(), "--yes")
+	_, err := r.flyctl.RunMut(ctx, "storage", "destroy", state.Name.ValueString(), "--yes")
 	if err != nil {
 		if flyctl.IsNotFound(err) {
 			return

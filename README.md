@@ -155,8 +155,40 @@ terraform import fly_ip_address.v6 my-app/ip-id
 | `api_url` | `FLY_API_URL` | API base URL (default: `https://api.machines.dev/v1`) |
 | `org_slug` | `FLY_ORG` | Default organization |
 | `flyctl_path` | `FLYCTL_PATH` | Path to flyctl binary (default: search PATH) |
+| `dry_run` | `FLY_DRY_RUN` | Preview commands without executing them (see below) |
 
 Generate a token: `fly tokens create org`
+
+## Dry-run mode
+
+Dry-run mode shows you exactly what API calls and flyctl commands would be executed during an apply, without actually making any changes to your infrastructure.
+
+Enable it via the provider config or environment variable:
+
+```hcl
+provider "fly" {
+  dry_run = true
+}
+```
+
+```bash
+FLY_DRY_RUN=1 terraform apply
+```
+
+Terraform warnings will show each intercepted mutation:
+
+```
+Warning: Dry Run [1]
+  POST https://api.machines.dev/v1/apps/my-app/machines/abc123/lease body={"ttl":60}
+
+Warning: Dry Run [2]
+  POST https://api.machines.dev/v1/apps/my-app/machines/abc123 body={...}
+
+Warning: Dry Run [3]
+  /usr/local/bin/flyctl ips allocate-v6 -a my-app
+```
+
+Read operations (state refresh, imports, data sources) work normally so Terraform can build an accurate plan. Only mutating operations (create, update, delete) are intercepted.
 
 ## Development
 

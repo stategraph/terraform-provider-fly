@@ -125,6 +125,7 @@ func (r *networkPolicyResource) Configure(_ context.Context, req resource.Config
 }
 
 func (r *networkPolicyResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, r.client, nil)
 	var plan models.NetworkPolicyResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -169,6 +170,7 @@ func (r *networkPolicyResource) Read(ctx context.Context, req resource.ReadReque
 }
 
 func (r *networkPolicyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, r.client, nil)
 	var plan models.NetworkPolicyResourceModel
 	var state models.NetworkPolicyResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -195,6 +197,7 @@ func (r *networkPolicyResource) Update(ctx context.Context, req resource.UpdateR
 }
 
 func (r *networkPolicyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, r.client, nil)
 	var state models.NetworkPolicyResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {

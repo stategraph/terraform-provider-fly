@@ -105,6 +105,7 @@ func (r *ipAddressResource) Configure(_ context.Context, req resource.ConfigureR
 }
 
 func (r *ipAddressResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.IPAddressResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -141,9 +142,19 @@ func (r *ipAddressResource) Create(ctx context.Context, req resource.CreateReque
 	}
 
 	// Allocate commands don't support --json, so use Run then list to get details.
-	_, err := r.flyctl.Run(ctx, args...)
+	_, err := r.flyctl.RunMut(ctx, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error allocating IP address", err.Error())
+		return
+	}
+
+	// In dry-run mode, no IP was actually allocated. Set placeholder state.
+	if r.flyctl.DryRun {
+		plan.ID = types.StringValue("dry-run")
+		plan.Address = types.StringValue("")
+		plan.Region = types.StringValue("")
+		plan.CreatedAt = types.StringValue("")
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 		return
 	}
 
@@ -216,6 +227,7 @@ func (r *ipAddressResource) Read(ctx context.Context, req resource.ReadRequest, 
 }
 
 func (r *ipAddressResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	resp.Diagnostics.AddError(
 		"Update not supported",
 		"All attributes of fly_ip_address require replacement. Update should never be called.",
@@ -223,13 +235,14 @@ func (r *ipAddressResource) Update(_ context.Context, _ resource.UpdateRequest, 
 }
 
 func (r *ipAddressResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var state models.IPAddressResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.flyctl.Run(ctx, "ips", "release", state.Address.ValueString(), "-a", state.App.ValueString())
+	_, err := r.flyctl.RunMut(ctx, "ips", "release", state.Address.ValueString(), "-a", state.App.ValueString())
 	if err != nil {
 		if flyctl.IsNotFound(err) {
 			return

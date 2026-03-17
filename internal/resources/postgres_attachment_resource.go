@@ -97,6 +97,7 @@ func (r *postgresAttachmentResource) Configure(_ context.Context, req resource.C
 }
 
 func (r *postgresAttachmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.PostgresAttachmentResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -116,7 +117,7 @@ func (r *postgresAttachmentResource) Create(ctx context.Context, req resource.Cr
 	}
 
 	var result flyctlPostgresAttachment
-	err := r.flyctl.RunJSON(ctx, &result, args...)
+	err := r.flyctl.RunJSONMut(ctx, &result, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error attaching Postgres cluster", err.Error())
 		return
@@ -139,17 +140,19 @@ func (r *postgresAttachmentResource) Read(ctx context.Context, req resource.Read
 }
 
 func (r *postgresAttachmentResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	resp.Diagnostics.AddError("Update not supported", "All attributes of fly_postgres_attachment require replacement.")
 }
 
 func (r *postgresAttachmentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var state models.PostgresAttachmentResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.flyctl.Run(ctx, "postgres", "detach",
+	_, err := r.flyctl.RunMut(ctx, "postgres", "detach",
 		state.PostgresApp.ValueString(),
 		"--app", state.App.ValueString(),
 		"--yes",

@@ -113,6 +113,7 @@ func (r *redisResource) Configure(_ context.Context, req resource.ConfigureReque
 }
 
 func (r *redisResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.RedisResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -134,7 +135,7 @@ func (r *redisResource) Create(ctx context.Context, req resource.CreateRequest, 
 	}
 
 	var result flyctlRedis
-	err := r.flyctl.RunJSON(ctx, &result, args...)
+	err := r.flyctl.RunJSONMut(ctx, &result, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating Redis database", err.Error())
 		return
@@ -167,6 +168,7 @@ func (r *redisResource) Read(ctx context.Context, req resource.ReadRequest, resp
 }
 
 func (r *redisResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.RedisResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -185,7 +187,7 @@ func (r *redisResource) Update(ctx context.Context, req resource.UpdateRequest, 
 	}
 
 	var result flyctlRedis
-	err := r.flyctl.RunJSON(ctx, &result, args...)
+	err := r.flyctl.RunJSONMut(ctx, &result, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating Redis database", err.Error())
 		return
@@ -196,13 +198,14 @@ func (r *redisResource) Update(ctx context.Context, req resource.UpdateRequest, 
 }
 
 func (r *redisResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var state models.RedisResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.flyctl.Run(ctx, "redis", "destroy", state.Name.ValueString(), "--yes")
+	_, err := r.flyctl.RunMut(ctx, "redis", "destroy", state.Name.ValueString(), "--yes")
 	if err != nil {
 		if flyctl.IsNotFound(err) {
 			return

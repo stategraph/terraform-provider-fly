@@ -98,6 +98,7 @@ func (r *appResource) Configure(_ context.Context, req resource.ConfigureRequest
 }
 
 func (r *appResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, r.client, nil)
 	var plan models.AppResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -168,6 +169,7 @@ func (r *appResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 }
 
 func (r *appResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, r.client, nil)
 	resp.Diagnostics.AddError(
 		"Update not supported",
 		"All attributes of fly_app require replacement. Update should never be called.",
@@ -175,6 +177,7 @@ func (r *appResource) Update(_ context.Context, _ resource.UpdateRequest, resp *
 }
 
 func (r *appResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, r.client, nil)
 	var state models.AppResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {

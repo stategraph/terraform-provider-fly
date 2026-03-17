@@ -79,6 +79,7 @@ func (r *mpgUserResource) Configure(_ context.Context, req resource.ConfigureReq
 }
 
 func (r *mpgUserResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.MPGUserResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -95,7 +96,7 @@ func (r *mpgUserResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	var result flyctlMPGUser
-	err := r.flyctl.RunJSON(ctx, &result, args...)
+	err := r.flyctl.RunJSONMut(ctx, &result, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating MPG user", err.Error())
 		return
@@ -140,6 +141,7 @@ func (r *mpgUserResource) Read(ctx context.Context, req resource.ReadRequest, re
 }
 
 func (r *mpgUserResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.MPGUserResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -152,7 +154,7 @@ func (r *mpgUserResource) Update(ctx context.Context, req resource.UpdateRequest
 		"--role", plan.Role.ValueString(),
 	}
 
-	_, err := r.flyctl.Run(ctx, args...)
+	_, err := r.flyctl.RunMut(ctx, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating MPG user role", err.Error())
 		return
@@ -162,13 +164,14 @@ func (r *mpgUserResource) Update(ctx context.Context, req resource.UpdateRequest
 }
 
 func (r *mpgUserResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var state models.MPGUserResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.flyctl.Run(ctx, "mpg", "users", "delete",
+	_, err := r.flyctl.RunMut(ctx, "mpg", "users", "delete",
 		"--cluster-id", state.ClusterID.ValueString(),
 		"--username", state.Username.ValueString(),
 		"--yes",

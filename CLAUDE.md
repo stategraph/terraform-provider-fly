@@ -63,3 +63,4 @@ Every resource implements `Resource`, `ResourceWithConfigure`, and `ResourceWith
 | `api_url`    | `FLY_API_URL`    | No       |
 | `org_slug`   | `FLY_ORG`        | No       |
 | `flyctl_path` | `FLYCTL_PATH`   | No       |
+| `dry_run`    | `FLY_DRY_RUN`   | No       |

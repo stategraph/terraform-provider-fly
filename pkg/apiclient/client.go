@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -16,12 +18,45 @@ const (
 	DefaultBaseURL = "https://api.machines.dev/v1"
 )
 
+// DryRunError is returned when the client is in dry-run mode instead of executing the request.
+type DryRunError struct {
+	Method string
+	URL    string
+	Body   any
+}
+
+func (e *DryRunError) Error() string {
+	if e.Body != nil {
+		b, _ := json.Marshal(e.Body)
+		return fmt.Sprintf("[dry-run] would execute: %s %s body=%s", e.Method, e.URL, string(b))
+	}
+	return fmt.Sprintf("[dry-run] would execute: %s %s", e.Method, e.URL)
+}
+
+// IsDryRun returns true if the error is a DryRunError.
+func IsDryRun(err error) bool {
+	_, ok := err.(*DryRunError)
+	return ok
+}
+
 type Client struct {
-	token      string
-	baseURL    string
-	httpClient *http.Client
-	userAgent  string
-	limiter    *rate.Limiter
+	token          string
+	baseURL        string
+	httpClient     *http.Client
+	userAgent      string
+	limiter        *rate.Limiter
+	DryRun         bool
+	dryRunMu       sync.Mutex
+	dryRunMessages []string
+}
+
+// FlushDryRunMessages returns and clears accumulated dry-run messages.
+func (c *Client) FlushDryRunMessages() []string {
+	c.dryRunMu.Lock()
+	defer c.dryRunMu.Unlock()
+	msgs := c.dryRunMessages
+	c.dryRunMessages = nil
+	return msgs
 }
 
 type ClientOption func(*Client)
@@ -49,6 +84,18 @@ func NewClient(token, version string, opts ...ClientOption) *Client {
 }
 
 func (c *Client) doRequest(ctx context.Context, method, url string, body any) (*http.Response, error) {
+	if c.DryRun && method != http.MethodGet {
+		msg := formatDryRunHTTP(method, url, body)
+		c.dryRunMu.Lock()
+		c.dryRunMessages = append(c.dryRunMessages, msg)
+		c.dryRunMu.Unlock()
+		return &http.Response{
+			StatusCode: 200,
+			Body:       io.NopCloser(strings.NewReader("{}")),
+			Header:     make(http.Header),
+		}, nil
+	}
+
 	if err := c.limiter.Wait(ctx); err != nil {
 		return nil, fmt.Errorf("rate limiter: %w", err)
 	}
@@ -133,4 +180,12 @@ func (c *Client) doJSONWithRetry(ctx context.Context, method, url string, body a
 
 func (c *Client) restURL(path string) string {
 	return c.baseURL + path
+}
+
+func formatDryRunHTTP(method, url string, body any) string {
+	if body != nil {
+		b, _ := json.Marshal(body)
+		return fmt.Sprintf("%s %s body=%s", method, url, string(b))
+	}
+	return fmt.Sprintf("%s %s", method, url)
 }

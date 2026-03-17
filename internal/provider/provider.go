@@ -27,6 +27,7 @@ type FlyProviderModel struct {
 	APIURL     types.String `tfsdk:"api_url"`
 	OrgSlug    types.String `tfsdk:"org_slug"`
 	FlyctlPath types.String `tfsdk:"flyctl_path"`
+	DryRun     types.Bool   `tfsdk:"dry_run"`
 }
 
 func New(version string) func() provider.Provider {
@@ -59,6 +60,10 @@ func (p *FlyProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *
 			},
 			"flyctl_path": schema.StringAttribute{
 				Description: "Path to the flyctl binary. Can also be set via FLYCTL_PATH. If unset, searches PATH for flyctl or fly.",
+				Optional:    true,
+			},
+			"dry_run": schema.BoolAttribute{
+				Description: "When true, flyctl commands are logged but not executed. Useful for previewing what commands would run. Can also be set via FLY_DRY_RUN.",
 				Optional:    true,
 			},
 		},
@@ -95,6 +100,7 @@ func (p *FlyProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	}
 
 	client := apiclient.NewClient(token, p.version, opts...)
+	// DryRun is set below after config is resolved.
 
 	// Resolve flyctl binary path.
 	flyctlPath := config.FlyctlPath.ValueString()
@@ -113,14 +119,23 @@ func (p *FlyProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		binaryPath = ""
 	}
 
+	dryRun := config.DryRun.ValueBool()
+	if !dryRun && os.Getenv("FLY_DRY_RUN") != "" {
+		dryRun = true
+	}
+
+	client.DryRun = dryRun
+
 	var executor *flyctl.Executor
 	if binaryPath != "" {
 		executor = flyctl.NewExecutor(binaryPath, token)
+		executor.DryRun = dryRun
 	}
 
 	pd := &models.ProviderData{
 		APIClient: client,
 		Flyctl:    executor,
+		DryRun:    dryRun,
 	}
 
 	resp.DataSourceData = pd

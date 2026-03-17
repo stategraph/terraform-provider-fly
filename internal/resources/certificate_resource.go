@@ -103,6 +103,7 @@ func (r *certificateResource) Configure(_ context.Context, req resource.Configur
 }
 
 func (r *certificateResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, r.client, nil)
 	var plan models.CertificateResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -161,6 +162,7 @@ func (r *certificateResource) Read(ctx context.Context, req resource.ReadRequest
 }
 
 func (r *certificateResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, r.client, nil)
 	resp.Diagnostics.AddError(
 		"Update not supported",
 		"All attributes of fly_certificate require replacement. Update should never be called.",
@@ -168,6 +170,7 @@ func (r *certificateResource) Update(_ context.Context, _ resource.UpdateRequest
 }
 
 func (r *certificateResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, r.client, nil)
 	var state models.CertificateResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
