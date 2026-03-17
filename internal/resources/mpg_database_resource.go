@@ -73,6 +73,7 @@ func (r *mpgDatabaseResource) Configure(_ context.Context, req resource.Configur
 }
 
 func (r *mpgDatabaseResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.MPGDatabaseResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -85,7 +86,7 @@ func (r *mpgDatabaseResource) Create(ctx context.Context, req resource.CreateReq
 	}
 
 	var result flyctlMPGDatabase
-	err := r.flyctl.RunJSON(ctx, &result, args...)
+	err := r.flyctl.RunJSONMut(ctx, &result, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating MPG database", err.Error())
 		return
@@ -130,10 +131,12 @@ func (r *mpgDatabaseResource) Read(ctx context.Context, req resource.ReadRequest
 }
 
 func (r *mpgDatabaseResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	resp.Diagnostics.AddError("Update not supported", "All attributes of fly_mpg_database require replacement.")
 }
 
-func (r *mpgDatabaseResource) Delete(_ context.Context, _ resource.DeleteRequest, _ *resource.DeleteResponse) {
+func (r *mpgDatabaseResource) Delete(_ context.Context, _ resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	// flyctl does not support deleting individual databases; just remove from state.
 }
 

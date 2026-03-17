@@ -100,6 +100,7 @@ func (r *wireGuardPeerResource) Configure(_ context.Context, req resource.Config
 }
 
 func (r *wireGuardPeerResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.WireGuardPeerResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -117,7 +118,7 @@ func (r *wireGuardPeerResource) Create(ctx context.Context, req resource.CreateR
 	}
 
 	var peer flyctlWireGuardPeer
-	err := r.flyctl.RunJSON(ctx, &peer, args...)
+	err := r.flyctl.RunJSONMut(ctx, &peer, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating WireGuard peer", err.Error())
 		return
@@ -167,17 +168,19 @@ func (r *wireGuardPeerResource) Read(ctx context.Context, req resource.ReadReque
 }
 
 func (r *wireGuardPeerResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	resp.Diagnostics.AddError("Update not supported", "All attributes of fly_wireguard_peer require replacement.")
 }
 
 func (r *wireGuardPeerResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var state models.WireGuardPeerResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.flyctl.Run(ctx, "wireguard", "remove", state.OrgSlug.ValueString(), state.Name.ValueString(), "--yes")
+	_, err := r.flyctl.RunMut(ctx, "wireguard", "remove", state.OrgSlug.ValueString(), state.Name.ValueString(), "--yes")
 	if err != nil {
 		resp.Diagnostics.AddError("Error deleting WireGuard peer", err.Error())
 	}

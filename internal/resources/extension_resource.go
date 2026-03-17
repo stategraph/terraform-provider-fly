@@ -130,6 +130,7 @@ func getStringAttrFromState(ctx context.Context, state tfsdk.State, attrName str
 }
 
 func (r *extensionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	name, diags := getStringAttrFromPlan(ctx, req.Plan, "name")
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -157,7 +158,7 @@ func (r *extensionResource) Create(ctx context.Context, req resource.CreateReque
 	}
 
 	var result flyctlExtension
-	err := r.flyctl.RunJSON(ctx, &result, args...)
+	err := r.flyctl.RunJSONMut(ctx, &result, args...)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("Error creating %s extension", r.config.TypeName), err.Error())
 		return
@@ -188,17 +189,19 @@ func (r *extensionResource) Read(ctx context.Context, req resource.ReadRequest, 
 }
 
 func (r *extensionResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	resp.Diagnostics.AddError("Update not supported", fmt.Sprintf("All attributes of fly_ext_%s require replacement.", r.config.TypeName))
 }
 
 func (r *extensionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	name, diags := getStringAttrFromState(ctx, req.State, "name")
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.flyctl.Run(ctx, "ext", r.config.TypeName, "destroy", name, "--yes")
+	_, err := r.flyctl.RunMut(ctx, "ext", r.config.TypeName, "destroy", name, "--yes")
 	if err != nil {
 		if flyctl.IsNotFound(err) {
 			return

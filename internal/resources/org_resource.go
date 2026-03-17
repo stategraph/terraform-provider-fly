@@ -72,6 +72,7 @@ func (r *orgResource) Configure(_ context.Context, req resource.ConfigureRequest
 }
 
 func (r *orgResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.OrgResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -79,7 +80,7 @@ func (r *orgResource) Create(ctx context.Context, req resource.CreateRequest, re
 	}
 
 	var result flyctlOrg
-	err := r.flyctl.RunJSON(ctx, &result, "orgs", "create", plan.Name.ValueString())
+	err := r.flyctl.RunJSONMut(ctx, &result, "orgs", "create", plan.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating organization", err.Error())
 		return
@@ -112,17 +113,19 @@ func (r *orgResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 }
 
 func (r *orgResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	resp.Diagnostics.AddError("Update not supported", "All attributes of fly_org require replacement.")
 }
 
 func (r *orgResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var state models.OrgResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.flyctl.Run(ctx, "orgs", "delete", state.Slug.ValueString(), "--yes")
+	_, err := r.flyctl.RunMut(ctx, "orgs", "delete", state.Slug.ValueString(), "--yes")
 	if err != nil {
 		if flyctl.IsNotFound(err) {
 			return

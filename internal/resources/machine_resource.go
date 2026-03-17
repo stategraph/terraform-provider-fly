@@ -355,6 +355,7 @@ func (r *machineResource) Configure(_ context.Context, req resource.ConfigureReq
 }
 
 func (r *machineResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, r.client, nil)
 	var plan models.MachineResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -370,6 +371,18 @@ func (r *machineResource) Create(ctx context.Context, req resource.CreateRequest
 	machine, err := r.client.CreateMachine(ctx, plan.App.ValueString(), createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating machine", err.Error())
+		return
+	}
+
+	// In dry-run mode, no actual resource was created. Set placeholder state.
+	if r.client.DryRun {
+		plan.ID = types.StringValue("dry-run")
+		plan.InstanceID = types.StringValue("")
+		plan.State = types.StringValue("")
+		plan.PrivateIP = types.StringValue("")
+		plan.CreatedAt = types.StringValue("")
+		plan.UpdatedAt = types.StringValue("")
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 		return
 	}
 
@@ -451,6 +464,7 @@ func (r *machineResource) Read(ctx context.Context, req resource.ReadRequest, re
 }
 
 func (r *machineResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, r.client, nil)
 	var plan models.MachineResourceModel
 	var state models.MachineResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -531,6 +545,44 @@ func (r *machineResource) Update(ctx context.Context, req resource.UpdateRequest
 		}
 	}
 
+	// In dry-run mode, no actual changes were made. Use plan values but resolve
+	// unknown computed fields from the prior state.
+	if r.client.DryRun {
+		if plan.CreatedAt.IsUnknown() {
+			plan.CreatedAt = state.CreatedAt
+		}
+		if plan.InstanceID.IsUnknown() {
+			plan.InstanceID = state.InstanceID
+		}
+		if plan.PrivateIP.IsUnknown() {
+			plan.PrivateIP = state.PrivateIP
+		}
+		if plan.State.IsUnknown() {
+			plan.State = state.State
+		}
+		if plan.UpdatedAt.IsUnknown() {
+			plan.UpdatedAt = state.UpdatedAt
+		}
+		for i := range plan.Services {
+			if i >= len(state.Services) {
+				break
+			}
+			if plan.Services[i].ForceHTTPS.IsUnknown() {
+				plan.Services[i].ForceHTTPS = state.Services[i].ForceHTTPS
+			}
+			for j := range plan.Services[i].Ports {
+				if j >= len(state.Services[i].Ports) {
+					break
+				}
+				if plan.Services[i].Ports[j].ForceHTTPS.IsUnknown() {
+					plan.Services[i].Ports[j].ForceHTTPS = state.Services[i].Ports[j].ForceHTTPS
+				}
+			}
+		}
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
+	}
+
 	// Wait for the machine to reach the desired state.
 	waitState := desiredStatus
 	if waitState == "" {
@@ -562,6 +614,7 @@ func (r *machineResource) Update(ctx context.Context, req resource.UpdateRequest
 }
 
 func (r *machineResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, r.client, nil)
 	var state models.MachineResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {

@@ -59,6 +59,9 @@ func (c *Client) StopMachine(ctx context.Context, appName, machineID string) err
 }
 
 func (c *Client) WaitForMachine(ctx context.Context, appName, machineID, state string, timeoutSeconds int) error {
+	if c.DryRun {
+		return nil
+	}
 	if timeoutSeconds <= 0 {
 		timeoutSeconds = 60
 	}

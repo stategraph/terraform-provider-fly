@@ -119,6 +119,7 @@ func (r *postgresClusterResource) Configure(_ context.Context, req resource.Conf
 }
 
 func (r *postgresClusterResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.PostgresClusterResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -145,7 +146,7 @@ func (r *postgresClusterResource) Create(ctx context.Context, req resource.Creat
 	}
 
 	var result flyctlPostgresCluster
-	err := r.flyctl.RunJSON(ctx, &result, args...)
+	err := r.flyctl.RunJSONMut(ctx, &result, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating Postgres cluster", err.Error())
 		return
@@ -186,17 +187,19 @@ func (r *postgresClusterResource) Read(ctx context.Context, req resource.ReadReq
 }
 
 func (r *postgresClusterResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	resp.Diagnostics.AddError("Update not supported", "All attributes of fly_postgres_cluster require replacement.")
 }
 
 func (r *postgresClusterResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var state models.PostgresClusterResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.flyctl.Run(ctx, "postgres", "destroy", state.Name.ValueString(), "--yes")
+	_, err := r.flyctl.RunMut(ctx, "postgres", "destroy", state.Name.ValueString(), "--yes")
 	if err != nil {
 		if flyctl.IsNotFound(err) {
 			return

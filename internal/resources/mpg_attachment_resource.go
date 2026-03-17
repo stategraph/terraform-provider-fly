@@ -97,6 +97,7 @@ func (r *mpgAttachmentResource) Configure(_ context.Context, req resource.Config
 }
 
 func (r *mpgAttachmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var plan models.MPGAttachmentResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -116,7 +117,7 @@ func (r *mpgAttachmentResource) Create(ctx context.Context, req resource.CreateR
 	}
 
 	var result flyctlMPGAttachment
-	err := r.flyctl.RunJSON(ctx, &result, args...)
+	err := r.flyctl.RunJSONMut(ctx, &result, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error attaching MPG cluster", err.Error())
 		return
@@ -139,17 +140,19 @@ func (r *mpgAttachmentResource) Read(ctx context.Context, req resource.ReadReque
 }
 
 func (r *mpgAttachmentResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	resp.Diagnostics.AddError("Update not supported", "All attributes of fly_mpg_attachment require replacement.")
 }
 
 func (r *mpgAttachmentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	defer models.FlushDryRunWarnings(&resp.Diagnostics, nil, r.flyctl)
 	var state models.MPGAttachmentResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.flyctl.Run(ctx, "mpg", "detach",
+	_, err := r.flyctl.RunMut(ctx, "mpg", "detach",
 		"--cluster-id", state.ClusterID.ValueString(),
 		"--app", state.App.ValueString(),
 		"--yes",
