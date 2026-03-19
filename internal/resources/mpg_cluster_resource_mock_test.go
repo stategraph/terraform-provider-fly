@@ -11,10 +11,10 @@ func TestMPGClusterResource_lifecycle(t *testing.T) {
 		"mpg create --name test-pg --org personal --region iad": {
 			Stdout: "Created MPG cluster test-pg\n",
 		},
-		"mpg list --json": {
+		"mpg list --org personal --json": {
 			Stdout: `[{"id":"mpg-123","name":"test-pg","status":"running","primary_region":"iad","region":"iad","plan":"starter","volume_size":10,"pg_major_version":16,"enable_postgis":false}]`,
 		},
-		"mpg destroy test-pg --yes": {
+		"mpg destroy mpg-123 --yes": {
 			Stdout: "Destroyed test-pg\n",
 		},
 	})
