@@ -8,10 +8,10 @@ import (
 
 func TestMPGAttachmentResource_lifecycle(t *testing.T) {
 	flyctlPath := createMockFlyctl(t, map[string]flyctlMockResponse{
-		"mpg attach --cluster-id mpg-123 --app myapp": {
+		"mpg attach mpg-123 --app myapp": {
 			Stdout: "Attached mpg-123 to myapp\n",
 		},
-		"mpg detach --cluster-id mpg-123 --app myapp --yes": {
+		"mpg detach mpg-123 --app myapp": {
 			Stdout: "Detached mpg-123 from myapp\n",
 		},
 	})

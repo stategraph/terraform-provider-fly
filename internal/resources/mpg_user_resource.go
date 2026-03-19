@@ -87,7 +87,7 @@ func (r *mpgUserResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	args := []string{"mpg", "users", "create",
-		"--cluster-id", plan.ClusterID.ValueString(),
+		plan.ClusterID.ValueString(),
 		"--username", plan.Username.ValueString(),
 	}
 
@@ -107,7 +107,7 @@ func (r *mpgUserResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	var results []flyctlMPGUser
-	err = r.flyctl.RunJSON(ctx, &results, "mpg", "users", "list", "--cluster-id", plan.ClusterID.ValueString())
+	err = r.flyctl.RunJSON(ctx, &results, "mpg", "users", "list", plan.ClusterID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading MPG users after creation", err.Error())
 		return
@@ -137,7 +137,7 @@ func (r *mpgUserResource) Read(ctx context.Context, req resource.ReadRequest, re
 	}
 
 	var results []flyctlMPGUser
-	err := r.flyctl.RunJSON(ctx, &results, "mpg", "users", "list", "--cluster-id", state.ClusterID.ValueString())
+	err := r.flyctl.RunJSON(ctx, &results, "mpg", "users", "list", state.ClusterID.ValueString())
 	if err != nil {
 		if flyctl.IsNotFound(err) {
 			resp.State.RemoveResource(ctx)
@@ -172,7 +172,7 @@ func (r *mpgUserResource) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	args := []string{"mpg", "users", "set-role",
-		"--cluster-id", plan.ClusterID.ValueString(),
+		plan.ClusterID.ValueString(),
 		"--username", plan.Username.ValueString(),
 		"--role", plan.Role.ValueString(),
 	}
@@ -195,7 +195,7 @@ func (r *mpgUserResource) Delete(ctx context.Context, req resource.DeleteRequest
 	}
 
 	_, err := r.flyctl.RunMut(ctx, "mpg", "users", "delete",
-		"--cluster-id", state.ClusterID.ValueString(),
+		state.ClusterID.ValueString(),
 		"--username", state.Username.ValueString(),
 		"--yes",
 	)

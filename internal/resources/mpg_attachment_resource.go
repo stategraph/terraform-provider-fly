@@ -105,7 +105,7 @@ func (r *mpgAttachmentResource) Create(ctx context.Context, req resource.CreateR
 	}
 
 	args := []string{"mpg", "attach",
-		"--cluster-id", plan.ClusterID.ValueString(),
+		plan.ClusterID.ValueString(),
 		"--app", plan.App.ValueString(),
 	}
 
@@ -162,9 +162,8 @@ func (r *mpgAttachmentResource) Delete(ctx context.Context, req resource.DeleteR
 	}
 
 	_, err := r.flyctl.RunMut(ctx, "mpg", "detach",
-		"--cluster-id", state.ClusterID.ValueString(),
+		state.ClusterID.ValueString(),
 		"--app", state.App.ValueString(),
-		"--yes",
 	)
 	if err != nil {
 		if flyctl.IsNotFound(err) {
