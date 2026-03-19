@@ -160,14 +160,17 @@ func (r *mpgClusterResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	var result flyctlMPGCluster
-	err = r.flyctl.RunJSON(ctx, &result, "mpg", "status", plan.Name.ValueString())
+	cluster, err := r.findClusterByName(ctx, plan.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading MPG cluster after creation", err.Error())
 		return
 	}
+	if cluster == nil {
+		resp.Diagnostics.AddError("Error finding MPG cluster after creation", "Cluster was created but not found in the list")
+		return
+	}
 
-	r.setModelFromAPI(&plan, &result)
+	r.setModelFromAPI(&plan, cluster)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -178,18 +181,17 @@ func (r *mpgClusterResource) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	var result flyctlMPGCluster
-	err := r.flyctl.RunJSON(ctx, &result, "mpg", "status", state.Name.ValueString())
+	cluster, err := r.findClusterByName(ctx, state.Name.ValueString())
 	if err != nil {
-		if flyctl.IsNotFound(err) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
 		resp.Diagnostics.AddError("Error reading MPG cluster", err.Error())
 		return
 	}
+	if cluster == nil {
+		resp.State.RemoveResource(ctx)
+		return
+	}
 
-	r.setModelFromAPI(&state, &result)
+	r.setModelFromAPI(&state, cluster)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -217,6 +219,20 @@ func (r *mpgClusterResource) Delete(ctx context.Context, req resource.DeleteRequ
 
 func (r *mpgClusterResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
+}
+
+func (r *mpgClusterResource) findClusterByName(ctx context.Context, name string) (*flyctlMPGCluster, error) {
+	var results []flyctlMPGCluster
+	err := r.flyctl.RunJSON(ctx, &results, "mpg", "list")
+	if err != nil {
+		return nil, err
+	}
+	for i := range results {
+		if results[i].Name == name {
+			return &results[i], nil
+		}
+	}
+	return nil, nil
 }
 
 func (r *mpgClusterResource) setModelFromAPI(model *models.MPGClusterResourceModel, api *flyctlMPGCluster) {
