@@ -184,15 +184,3 @@ func (r *mpgAttachmentResource) ImportState(ctx context.Context, req resource.Im
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("app"), parts[1])...)
 }
 
-func (r *mpgAttachmentResource) setModelFromAPI(model *models.MPGAttachmentResourceModel, api *flyctlMPGAttachment) {
-	model.ID = types.StringValue(model.ClusterID.ValueString() + "/" + model.App.ValueString())
-	model.ConnectionURI = types.StringValue(api.ConnectionURI)
-	model.VariableName = types.StringValue(api.VariableName)
-	model.Database = types.StringValue(api.Database)
-}
-
-type flyctlMPGAttachment struct {
-	ConnectionURI string `json:"connection_uri"`
-	VariableName  string `json:"variable_name"`
-	Database      string `json:"database"`
-}
