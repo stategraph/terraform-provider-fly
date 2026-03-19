@@ -81,7 +81,7 @@ func (r *mpgDatabaseResource) Create(ctx context.Context, req resource.CreateReq
 	}
 
 	args := []string{"mpg", "databases", "create",
-		"--cluster-id", plan.ClusterID.ValueString(),
+		plan.ClusterID.ValueString(),
 		"--name", plan.Name.ValueString(),
 	}
 
@@ -97,7 +97,7 @@ func (r *mpgDatabaseResource) Create(ctx context.Context, req resource.CreateReq
 	}
 
 	var results []flyctlMPGDatabase
-	err = r.flyctl.RunJSON(ctx, &results, "mpg", "databases", "list", "--cluster-id", plan.ClusterID.ValueString())
+	err = r.flyctl.RunJSON(ctx, &results, "mpg", "databases", "list", plan.ClusterID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading MPG databases after creation", err.Error())
 		return
@@ -127,7 +127,7 @@ func (r *mpgDatabaseResource) Read(ctx context.Context, req resource.ReadRequest
 	}
 
 	var results []flyctlMPGDatabase
-	err := r.flyctl.RunJSON(ctx, &results, "mpg", "databases", "list", "--cluster-id", state.ClusterID.ValueString())
+	err := r.flyctl.RunJSON(ctx, &results, "mpg", "databases", "list", state.ClusterID.ValueString())
 	if err != nil {
 		if flyctl.IsNotFound(err) {
 			resp.State.RemoveResource(ctx)

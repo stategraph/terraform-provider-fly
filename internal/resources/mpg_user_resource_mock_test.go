@@ -8,13 +8,13 @@ import (
 
 func TestMPGUserResource_lifecycle(t *testing.T) {
 	flyctlPath := createMockFlyctl(t, map[string]flyctlMockResponse{
-		"mpg users create --cluster-id mpg-123 --username testuser": {
+		"mpg users create mpg-123 --username testuser": {
 			Stdout: "Created user testuser\n",
 		},
-		"mpg users list --cluster-id mpg-123 --json": {
+		"mpg users list mpg-123 --json": {
 			Stdout: `[{"username":"testuser","role":"user"}]`,
 		},
-		"mpg users delete --cluster-id mpg-123 --username testuser --yes": {
+		"mpg users delete mpg-123 --username testuser --yes": {
 			Stdout: "Deleted testuser\n",
 		},
 	})

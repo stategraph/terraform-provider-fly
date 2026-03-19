@@ -209,7 +209,7 @@ func (r *mpgClusterResource) Delete(ctx context.Context, req resource.DeleteRequ
 		return
 	}
 
-	_, err := r.flyctl.RunMut(ctx, "mpg", "destroy", state.Name.ValueString(), "--yes")
+	_, err := r.flyctl.RunMut(ctx, "mpg", "destroy", state.ID.ValueString(), "--yes")
 	if err != nil {
 		if flyctl.IsNotFound(err) {
 			return
