@@ -157,10 +157,21 @@ func (r *extensionResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	var result flyctlExtension
-	err := r.flyctl.RunJSONMut(ctx, &result, args...)
+	_, err := r.flyctl.RunMut(ctx, args...)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("Error creating %s extension", r.config.TypeName), err.Error())
+		return
+	}
+
+	if r.flyctl.DryRun {
+		r.writeStateFromAPI(ctx, &resp.State, &req.Plan, nil, &flyctlExtension{Name: name}, &resp.Diagnostics)
+		return
+	}
+
+	var result flyctlExtension
+	err = r.flyctl.RunJSON(ctx, &result, "ext", r.config.TypeName, "status", name)
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading %s extension after creation", r.config.TypeName), err.Error())
 		return
 	}
 

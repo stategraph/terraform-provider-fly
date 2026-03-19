@@ -8,8 +8,8 @@ import (
 
 func TestOrgResource_lifecycle(t *testing.T) {
 	flyctlPath := createMockFlyctl(t, map[string]flyctlMockResponse{
-		"orgs create test-org --json": {
-			Stdout: `{"id":"org-123","name":"test-org","slug":"test-org"}`,
+		"orgs create test-org": {
+			Stdout: "Created organization test-org\n",
 		},
 		"orgs show test-org --json": {
 			Stdout: `{"id":"org-123","name":"test-org","slug":"test-org"}`,

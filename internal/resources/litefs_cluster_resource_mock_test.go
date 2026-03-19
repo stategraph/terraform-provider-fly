@@ -8,8 +8,8 @@ import (
 
 func TestLiteFSClusterResource_lifecycle(t *testing.T) {
 	flyctlPath := createMockFlyctl(t, map[string]flyctlMockResponse{
-		"litefs-cloud clusters create --name test-litefs --org personal --region iad --json": {
-			Stdout: `{"id":"lfs-123","name":"test-litefs","status":"running","region":"iad","org":"personal"}`,
+		"litefs-cloud clusters create --name test-litefs --org personal --region iad": {
+			Stdout: "Created LiteFS cluster test-litefs\n",
 		},
 		"litefs-cloud clusters list --json": {
 			Stdout: `[{"id":"lfs-123","name":"test-litefs","status":"running","region":"iad","org":"personal"}]`,

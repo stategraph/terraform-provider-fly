@@ -8,8 +8,8 @@ import (
 
 func TestPostgresClusterResource_lifecycle(t *testing.T) {
 	flyctlPath := createMockFlyctl(t, map[string]flyctlMockResponse{
-		"postgres create --name test-pg --org personal --region iad --json": {
-			Stdout: `{"id":"pg-123","name":"test-pg","status":"running","region":"iad","org":"personal","cluster_size":1,"volume_size":10,"vm_size":"shared-cpu-1x","enable_backups":false}`,
+		"postgres create --name test-pg --org personal --region iad": {
+			Stdout: "Created Postgres cluster test-pg\n",
 		},
 		"postgres list --json": {
 			Stdout: `[{"id":"pg-123","name":"test-pg","status":"running","region":"iad","org":"personal","cluster_size":1,"volume_size":10,"vm_size":"shared-cpu-1x","enable_backups":false}]`,

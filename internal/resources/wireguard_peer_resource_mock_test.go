@@ -8,8 +8,8 @@ import (
 
 func TestWireGuardPeerResource_lifecycle(t *testing.T) {
 	flyctlPath := createMockFlyctl(t, map[string]flyctlMockResponse{
-		"wireguard create personal iad test-peer --pubkey test-pubkey --json": {
-			Stdout: `{"name":"test-peer","region":"iad","pubkey":"test-pubkey","peerip":"fdaa::1","endpointip":"1.2.3.4","gatewayip":""}`,
+		"wireguard create personal iad test-peer --pubkey test-pubkey": {
+			Stdout: "Created WireGuard peer test-peer\n",
 		},
 		"wireguard list --org personal --json": {
 			Stdout: `[{"id":"wg-1","name":"test-peer","region":"iad","pubkey":"test-pubkey","peerip":"fdaa::1","endpointip":"1.2.3.4","gatewayip":""}]`,

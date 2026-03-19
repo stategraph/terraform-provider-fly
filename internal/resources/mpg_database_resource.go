@@ -85,14 +85,37 @@ func (r *mpgDatabaseResource) Create(ctx context.Context, req resource.CreateReq
 		"--name", plan.Name.ValueString(),
 	}
 
-	var result flyctlMPGDatabase
-	err := r.flyctl.RunJSONMut(ctx, &result, args...)
+	_, err := r.flyctl.RunMut(ctx, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating MPG database", err.Error())
 		return
 	}
 
-	r.setModelFromAPI(&plan, &result)
+	if r.flyctl.DryRun {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
+	}
+
+	var results []flyctlMPGDatabase
+	err = r.flyctl.RunJSON(ctx, &results, "mpg", "databases", "list", "--cluster-id", plan.ClusterID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading MPG databases after creation", err.Error())
+		return
+	}
+
+	var found *flyctlMPGDatabase
+	for _, db := range results {
+		if db.Name == plan.Name.ValueString() {
+			found = &db
+			break
+		}
+	}
+	if found == nil {
+		resp.Diagnostics.AddError("Error finding MPG database after creation", "Database was created but not found in the list")
+		return
+	}
+
+	r.setModelFromAPI(&plan, found)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 

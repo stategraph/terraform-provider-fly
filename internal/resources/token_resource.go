@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -98,7 +99,7 @@ func (r *tokenResource) Create(ctx context.Context, req resource.CreateRequest, 
 		return
 	}
 
-	args := []string{"tokens", "create", plan.Type.ValueString(), "--json"}
+	args := []string{"tokens", "create", plan.Type.ValueString()}
 
 	if v := plan.App.ValueString(); v != "" {
 		args = append(args, "--app", v)
@@ -113,14 +114,58 @@ func (r *tokenResource) Create(ctx context.Context, req resource.CreateRequest, 
 		args = append(args, "--expiry", v)
 	}
 
-	var result flyctlToken
-	err := r.flyctl.RunJSONMut(ctx, &result, args...)
+	out, err := r.flyctl.RunMut(ctx, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating token", err.Error())
 		return
 	}
 
-	r.setModelFromAPI(&plan, &result)
+	if r.flyctl.DryRun {
+		plan.ID = types.StringValue("dry-run")
+		plan.Token = types.StringValue("")
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
+	}
+
+	// Read back the token list to get the ID.
+	listArgs := []string{"tokens", "list", "--json"}
+	if v := plan.App.ValueString(); v != "" {
+		listArgs = append(listArgs, "--app", v)
+	}
+	if v := plan.Org.ValueString(); v != "" {
+		listArgs = append(listArgs, "--org", v)
+	}
+
+	listOut, err := r.flyctl.Run(ctx, listArgs...)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading tokens after creation", err.Error())
+		return
+	}
+
+	var tokens []flyctlToken
+	if err := json.Unmarshal(listOut.Stdout, &tokens); err != nil {
+		resp.Diagnostics.AddError("Error parsing token list", err.Error())
+		return
+	}
+
+	var found *flyctlToken
+	for _, t := range tokens {
+		if t.Name == plan.Name.ValueString() {
+			t := t
+			found = &t
+			break
+		}
+	}
+	if found == nil {
+		resp.Diagnostics.AddError("Error finding token after creation", "Token was created but not found in the list")
+		return
+	}
+
+	r.setModelFromAPI(&plan, found)
+	// The token value is in stdout from the create command, not from list.
+	if out != nil {
+		plan.Token = types.StringValue(strings.TrimSpace(string(out.Stdout)))
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
