@@ -116,14 +116,23 @@ func (r *mpgAttachmentResource) Create(ctx context.Context, req resource.CreateR
 		args = append(args, "--variable-name", v)
 	}
 
-	var result flyctlMPGAttachment
-	err := r.flyctl.RunJSONMut(ctx, &result, args...)
+	_, err := r.flyctl.RunMut(ctx, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error attaching MPG cluster", err.Error())
 		return
 	}
 
-	r.setModelFromAPI(&plan, &result)
+	// Attachment has no read/status command. Set state from plan values.
+	plan.ID = types.StringValue(plan.ClusterID.ValueString() + "/" + plan.App.ValueString())
+	if plan.Database.IsUnknown() {
+		plan.Database = types.StringValue("")
+	}
+	if plan.VariableName.IsUnknown() {
+		plan.VariableName = types.StringValue("DATABASE_URL")
+	}
+	if plan.ConnectionURI.IsUnknown() {
+		plan.ConnectionURI = types.StringValue("")
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -175,15 +184,3 @@ func (r *mpgAttachmentResource) ImportState(ctx context.Context, req resource.Im
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("app"), parts[1])...)
 }
 
-func (r *mpgAttachmentResource) setModelFromAPI(model *models.MPGAttachmentResourceModel, api *flyctlMPGAttachment) {
-	model.ID = types.StringValue(model.ClusterID.ValueString() + "/" + model.App.ValueString())
-	model.ConnectionURI = types.StringValue(api.ConnectionURI)
-	model.VariableName = types.StringValue(api.VariableName)
-	model.Database = types.StringValue(api.Database)
-}
-
-type flyctlMPGAttachment struct {
-	ConnectionURI string `json:"connection_uri"`
-	VariableName  string `json:"variable_name"`
-	Database      string `json:"database"`
-}

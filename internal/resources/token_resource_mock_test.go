@@ -8,8 +8,8 @@ import (
 
 func TestTokenResource_lifecycle(t *testing.T) {
 	flyctlPath := createMockFlyctl(t, map[string]flyctlMockResponse{
-		"tokens create deploy --json --org personal --name test-token": {
-			Stdout: `{"id":"token-123","name":"test-token","type":"deploy","token":"fm2_supersecretvalue"}`,
+		"tokens create deploy --org personal --name test-token": {
+			Stdout: "fm2_supersecretvalue",
 		},
 		"tokens list --json --org personal": {
 			Stdout: `[{"id":"token-123","name":"test-token","type":"deploy"}]`,

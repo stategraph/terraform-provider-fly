@@ -117,17 +117,45 @@ func (r *wireGuardPeerResource) Create(ctx context.Context, req resource.CreateR
 		args = append(args, "--network", network)
 	}
 
-	var peer flyctlWireGuardPeer
-	err := r.flyctl.RunJSONMut(ctx, &peer, args...)
+	_, err := r.flyctl.RunMut(ctx, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating WireGuard peer", err.Error())
 		return
 	}
 
+	if r.flyctl.DryRun {
+		plan.ID = types.StringValue(orgSlug + "/" + name)
+		plan.PeerIP = types.StringValue("")
+		plan.EndpointIP = types.StringValue("")
+		plan.GatewayIP = types.StringValue("")
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
+	}
+
+	var peers []flyctlWireGuardPeer
+	err = r.flyctl.RunJSON(ctx, &peers, "wireguard", "list", "--org", orgSlug)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading WireGuard peers after creation", err.Error())
+		return
+	}
+
+	var found *flyctlWireGuardPeer
+	for _, p := range peers {
+		if p.Name == name {
+			p := p
+			found = &p
+			break
+		}
+	}
+	if found == nil {
+		resp.Diagnostics.AddError("Error finding WireGuard peer after creation", "Peer was created but not found in the list")
+		return
+	}
+
 	plan.ID = types.StringValue(orgSlug + "/" + name)
-	plan.PeerIP = types.StringValue(peer.PeerIP)
-	plan.EndpointIP = types.StringValue(peer.EndpointIP)
-	plan.GatewayIP = types.StringValue(peer.GatewayIP)
+	plan.PeerIP = types.StringValue(found.PeerIP)
+	plan.EndpointIP = types.StringValue(found.EndpointIP)
+	plan.GatewayIP = types.StringValue(found.GatewayIP)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }

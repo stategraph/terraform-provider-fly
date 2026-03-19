@@ -124,7 +124,6 @@ func (r *redisResource) Create(ctx context.Context, req resource.CreateRequest, 
 		"--name", plan.Name.ValueString(),
 		"--org", plan.Org.ValueString(),
 		"--region", plan.Region.ValueString(),
-		"--json",
 	}
 
 	if v := plan.Plan.ValueString(); v != "" {
@@ -134,10 +133,21 @@ func (r *redisResource) Create(ctx context.Context, req resource.CreateRequest, 
 		args = append(args, "--enable-eviction")
 	}
 
-	var result flyctlRedis
-	err := r.flyctl.RunJSONMut(ctx, &result, args...)
+	_, err := r.flyctl.RunMut(ctx, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating Redis database", err.Error())
+		return
+	}
+
+	if r.flyctl.DryRun {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
+	}
+
+	var result flyctlRedis
+	err = r.flyctl.RunJSON(ctx, &result, "redis", "status", plan.Name.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading Redis database after creation", err.Error())
 		return
 	}
 
@@ -153,7 +163,7 @@ func (r *redisResource) Read(ctx context.Context, req resource.ReadRequest, resp
 	}
 
 	var result flyctlRedis
-	err := r.flyctl.RunJSON(ctx, &result, "redis", "status", state.Name.ValueString(), "--json")
+	err := r.flyctl.RunJSON(ctx, &result, "redis", "status", state.Name.ValueString())
 	if err != nil {
 		if flyctl.IsNotFound(err) {
 			resp.State.RemoveResource(ctx)
@@ -175,7 +185,7 @@ func (r *redisResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		return
 	}
 
-	args := []string{"redis", "update", plan.Name.ValueString(), "--json"}
+	args := []string{"redis", "update", plan.Name.ValueString()}
 
 	if v := plan.Plan.ValueString(); v != "" {
 		args = append(args, "--plan", v)
@@ -186,10 +196,21 @@ func (r *redisResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		}
 	}
 
-	var result flyctlRedis
-	err := r.flyctl.RunJSONMut(ctx, &result, args...)
+	_, err := r.flyctl.RunMut(ctx, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating Redis database", err.Error())
+		return
+	}
+
+	if r.flyctl.DryRun {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
+	}
+
+	var result flyctlRedis
+	err = r.flyctl.RunJSON(ctx, &result, "redis", "status", plan.Name.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading Redis database after update", err.Error())
 		return
 	}
 

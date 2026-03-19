@@ -8,8 +8,8 @@ import (
 
 func TestRedisResource_lifecycle(t *testing.T) {
 	flyctlPath := createMockFlyctl(t, map[string]flyctlMockResponse{
-		"redis create --name test-redis --org personal --region iad --json": {
-			Stdout: `{"id":"redis-123","name":"test-redis","status":"running","region":"iad","plan":"free","primary_url":"redis://test-redis.internal:6379","replica_regions":["ord"],"enable_eviction":false}`,
+		"redis create --name test-redis --org personal --region iad": {
+			Stdout: "Created Redis database test-redis\n",
 		},
 		"redis status test-redis --json": {
 			Stdout: `{"id":"redis-123","name":"test-redis","status":"running","region":"iad","plan":"free","primary_url":"redis://test-redis.internal:6379","replica_regions":["ord"],"enable_eviction":false}`,

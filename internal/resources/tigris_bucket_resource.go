@@ -103,17 +103,27 @@ func (r *tigrisBucketResource) Create(ctx context.Context, req resource.CreateRe
 	args := []string{"storage", "create",
 		"--name", plan.Name.ValueString(),
 		"--org", plan.Org.ValueString(),
-		"--json",
 	}
 
 	if !plan.Public.IsNull() && plan.Public.ValueBool() {
 		args = append(args, "--public")
 	}
 
-	var result flyctlTigrisBucket
-	err := r.flyctl.RunJSONMut(ctx, &result, args...)
+	_, err := r.flyctl.RunMut(ctx, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating Tigris bucket", err.Error())
+		return
+	}
+
+	if r.flyctl.DryRun {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
+	}
+
+	var result flyctlTigrisBucket
+	err = r.flyctl.RunJSON(ctx, &result, "storage", "status", plan.Name.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading Tigris bucket after creation", err.Error())
 		return
 	}
 
@@ -129,7 +139,7 @@ func (r *tigrisBucketResource) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	var result flyctlTigrisBucket
-	err := r.flyctl.RunJSON(ctx, &result, "storage", "status", state.Name.ValueString(), "--json")
+	err := r.flyctl.RunJSON(ctx, &result, "storage", "status", state.Name.ValueString())
 	if err != nil {
 		if flyctl.IsNotFound(err) {
 			resp.State.RemoveResource(ctx)
@@ -151,7 +161,7 @@ func (r *tigrisBucketResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	args := []string{"storage", "update", plan.Name.ValueString(), "--json"}
+	args := []string{"storage", "update", plan.Name.ValueString()}
 
 	if !plan.Public.IsNull() {
 		if plan.Public.ValueBool() {
@@ -162,10 +172,21 @@ func (r *tigrisBucketResource) Update(ctx context.Context, req resource.UpdateRe
 		args = append(args, "--custom-domain", v)
 	}
 
-	var result flyctlTigrisBucket
-	err := r.flyctl.RunJSONMut(ctx, &result, args...)
+	_, err := r.flyctl.RunMut(ctx, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating Tigris bucket", err.Error())
+		return
+	}
+
+	if r.flyctl.DryRun {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
+	}
+
+	var result flyctlTigrisBucket
+	err = r.flyctl.RunJSON(ctx, &result, "storage", "status", plan.Name.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading Tigris bucket after update", err.Error())
 		return
 	}
 

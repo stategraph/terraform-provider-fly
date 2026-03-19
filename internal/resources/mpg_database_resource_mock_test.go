@@ -8,8 +8,8 @@ import (
 
 func TestMPGDatabaseResource_lifecycle(t *testing.T) {
 	flyctlPath := createMockFlyctl(t, map[string]flyctlMockResponse{
-		"mpg databases create --cluster-id mpg-123 --name mydb --json": {
-			Stdout: `{"name":"mydb"}`,
+		"mpg databases create --cluster-id mpg-123 --name mydb": {
+			Stdout: "Created database mydb\n",
 		},
 		"mpg databases list --cluster-id mpg-123 --json": {
 			Stdout: `[{"name":"mydb"}]`,

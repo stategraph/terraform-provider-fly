@@ -95,14 +95,37 @@ func (r *mpgUserResource) Create(ctx context.Context, req resource.CreateRequest
 		args = append(args, "--role", v)
 	}
 
-	var result flyctlMPGUser
-	err := r.flyctl.RunJSONMut(ctx, &result, args...)
+	_, err := r.flyctl.RunMut(ctx, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating MPG user", err.Error())
 		return
 	}
 
-	r.setModelFromAPI(&plan, &result)
+	if r.flyctl.DryRun {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
+	}
+
+	var results []flyctlMPGUser
+	err = r.flyctl.RunJSON(ctx, &results, "mpg", "users", "list", "--cluster-id", plan.ClusterID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading MPG users after creation", err.Error())
+		return
+	}
+
+	var found *flyctlMPGUser
+	for _, u := range results {
+		if u.Username == plan.Username.ValueString() {
+			found = &u
+			break
+		}
+	}
+	if found == nil {
+		resp.Diagnostics.AddError("Error finding MPG user after creation", "User was created but not found in the list")
+		return
+	}
+
+	r.setModelFromAPI(&plan, found)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 

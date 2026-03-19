@@ -79,10 +79,21 @@ func (r *orgResource) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 
-	var result flyctlOrg
-	err := r.flyctl.RunJSONMut(ctx, &result, "orgs", "create", plan.Name.ValueString())
+	_, err := r.flyctl.RunMut(ctx, "orgs", "create", plan.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating organization", err.Error())
+		return
+	}
+
+	if r.flyctl.DryRun {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
+	}
+
+	var result flyctlOrg
+	err = r.flyctl.RunJSON(ctx, &result, "orgs", "show", plan.Name.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading organization after creation", err.Error())
 		return
 	}
 

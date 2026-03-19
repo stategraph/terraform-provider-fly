@@ -88,15 +88,20 @@ func (r *wireGuardTokenResource) Create(ctx context.Context, req resource.Create
 	orgSlug := plan.OrgSlug.ValueString()
 	name := plan.Name.ValueString()
 
-	var result flyctlWireGuardToken
-	err := r.flyctl.RunJSONMut(ctx, &result, "wireguard", "token", "create", "--org", orgSlug, "--name", name)
+	out, err := r.flyctl.RunMut(ctx, "wireguard", "token", "create", "--org", orgSlug, "--name", name)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating WireGuard token", err.Error())
 		return
 	}
 
 	plan.ID = types.StringValue(orgSlug + "/" + name)
-	plan.Token = types.StringValue(result.Token)
+	// The token value is returned in stdout from the create command.
+	// It's only available at creation time, so capture it now.
+	if out != nil {
+		plan.Token = types.StringValue(strings.TrimSpace(string(out.Stdout)))
+	} else {
+		plan.Token = types.StringValue("")
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }

@@ -8,8 +8,8 @@ import (
 
 func TestExtMySQLResource_lifecycle(t *testing.T) {
 	flyctlPath := createMockFlyctl(t, map[string]flyctlMockResponse{
-		"ext mysql create --name test-mysql --org personal --region iad --json": {
-			Stdout: `{"id":"ext-1","name":"test-mysql","status":"running"}`,
+		"ext mysql create --name test-mysql --org personal --region iad": {
+			Stdout: "Created ext mysql test-mysql\n",
 		},
 		"ext mysql status test-mysql --json": {
 			Stdout: `{"id":"ext-1","name":"test-mysql","status":"running"}`,
@@ -50,8 +50,8 @@ resource "fly_ext_mysql" "test" {
 
 func TestExtSentryResource_lifecycle(t *testing.T) {
 	flyctlPath := createMockFlyctl(t, map[string]flyctlMockResponse{
-		"ext sentry create --name test-sentry --app my-app --json": {
-			Stdout: `{"id":"ext-2","name":"test-sentry","status":"running"}`,
+		"ext sentry create --name test-sentry --app my-app": {
+			Stdout: "Created ext sentry test-sentry\n",
 		},
 		"ext sentry status test-sentry --json": {
 			Stdout: `{"id":"ext-2","name":"test-sentry","status":"running"}`,

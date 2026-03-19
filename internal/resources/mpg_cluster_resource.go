@@ -149,10 +149,21 @@ func (r *mpgClusterResource) Create(ctx context.Context, req resource.CreateRequ
 		args = append(args, "--enable-postgis")
 	}
 
-	var result flyctlMPGCluster
-	err := r.flyctl.RunJSONMut(ctx, &result, args...)
+	_, err := r.flyctl.RunMut(ctx, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating MPG cluster", err.Error())
+		return
+	}
+
+	if r.flyctl.DryRun {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
+	}
+
+	var result flyctlMPGCluster
+	err = r.flyctl.RunJSON(ctx, &result, "mpg", "status", plan.Name.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading MPG cluster after creation", err.Error())
 		return
 	}
 

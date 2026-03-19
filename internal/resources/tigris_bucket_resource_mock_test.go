@@ -8,8 +8,8 @@ import (
 
 func TestTigrisBucketResource_lifecycle(t *testing.T) {
 	flyctlPath := createMockFlyctl(t, map[string]flyctlMockResponse{
-		"storage create --name test-bucket --org personal --json": {
-			Stdout: `{"id":"bucket-123","name":"test-bucket","status":"ready","public":false}`,
+		"storage create --name test-bucket --org personal": {
+			Stdout: "Created Tigris bucket test-bucket\n",
 		},
 		"storage status test-bucket --json": {
 			Stdout: `{"id":"bucket-123","name":"test-bucket","status":"ready","public":false}`,

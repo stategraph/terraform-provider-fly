@@ -8,8 +8,8 @@ import (
 
 func TestWireGuardTokenResource_lifecycle(t *testing.T) {
 	flyctlPath := createMockFlyctl(t, map[string]flyctlMockResponse{
-		"wireguard token create --org personal --name test-token --json": {
-			Stdout: `{"id":"wgt-1","name":"test-token","token":"secret-token-value"}`,
+		"wireguard token create --org personal --name test-token": {
+			Stdout: "secret-token-value",
 		},
 		"wireguard token list --org personal --json": {
 			Stdout: `[{"id":"wgt-1","name":"test-token"}]`,

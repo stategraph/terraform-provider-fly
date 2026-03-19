@@ -94,14 +94,37 @@ func (r *liteFSClusterResource) Create(ctx context.Context, req resource.CreateR
 		"--region", plan.Region.ValueString(),
 	}
 
-	var result flyctlLiteFSCluster
-	err := r.flyctl.RunJSONMut(ctx, &result, args...)
+	_, err := r.flyctl.RunMut(ctx, args...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating LiteFS cluster", err.Error())
 		return
 	}
 
-	r.setModelFromAPI(&plan, &result)
+	if r.flyctl.DryRun {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
+	}
+
+	var results []flyctlLiteFSCluster
+	err = r.flyctl.RunJSON(ctx, &results, "litefs-cloud", "clusters", "list")
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading LiteFS clusters after creation", err.Error())
+		return
+	}
+
+	var found *flyctlLiteFSCluster
+	for i := range results {
+		if results[i].Name == plan.Name.ValueString() {
+			found = &results[i]
+			break
+		}
+	}
+	if found == nil {
+		resp.Diagnostics.AddError("Error finding LiteFS cluster after creation", "Cluster was created but not found in the list")
+		return
+	}
+
+	r.setModelFromAPI(&plan, found)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
