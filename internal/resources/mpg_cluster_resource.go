@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -36,7 +37,7 @@ func (r *mpgClusterResource) Metadata(_ context.Context, req resource.MetadataRe
 
 func (r *mpgClusterResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a Fly.io Managed Postgres (MPG) cluster. Import using the cluster name.",
+		Description: "Manages a Fly.io Managed Postgres (MPG) cluster. Import using org_slug/cluster_name.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The unique identifier of the cluster.",
@@ -160,7 +161,7 @@ func (r *mpgClusterResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	cluster, err := r.findClusterByName(ctx, plan.Name.ValueString())
+	cluster, err := r.findClusterByName(ctx, plan.Name.ValueString(), plan.Org.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading MPG cluster after creation", err.Error())
 		return
@@ -181,7 +182,7 @@ func (r *mpgClusterResource) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	cluster, err := r.findClusterByName(ctx, state.Name.ValueString())
+	cluster, err := r.findClusterByName(ctx, state.Name.ValueString(), state.Org.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading MPG cluster", err.Error())
 		return
@@ -218,12 +219,23 @@ func (r *mpgClusterResource) Delete(ctx context.Context, req resource.DeleteRequ
 }
 
 func (r *mpgClusterResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
+	parts := strings.SplitN(req.ID, "/", 2)
+	if len(parts) == 2 && parts[0] != "" && parts[1] != "" {
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("org"), parts[0])...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), parts[1])...)
+	} else {
+		// Allow import by name only (org will be empty, works if FLY_ORG is set)
+		resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
+	}
 }
 
-func (r *mpgClusterResource) findClusterByName(ctx context.Context, name string) (*flyctlMPGCluster, error) {
+func (r *mpgClusterResource) findClusterByName(ctx context.Context, name string, org string) (*flyctlMPGCluster, error) {
+	args := []string{"mpg", "list"}
+	if org != "" {
+		args = append(args, "--org", org)
+	}
 	var results []flyctlMPGCluster
-	err := r.flyctl.RunJSON(ctx, &results, "mpg", "list")
+	err := r.flyctl.RunJSON(ctx, &results, args...)
 	if err != nil {
 		return nil, err
 	}
