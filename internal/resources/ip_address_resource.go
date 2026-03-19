@@ -130,7 +130,7 @@ func (r *ipAddressResource) Create(ctx context.Context, req resource.CreateReque
 		allocateCmd = "allocate-v4"
 	}
 
-	args := []string{"ips", allocateCmd, "-a", appName}
+	args := []string{"ips", allocateCmd, "-a", appName, "--yes"}
 	if addrType == "shared_v4" {
 		args = append(args, "--shared")
 	}
