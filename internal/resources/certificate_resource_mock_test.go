@@ -74,8 +74,9 @@ func TestCertificateResource_lifecycle(t *testing.T) {
 func testCertConfigWithURL(apiURL string) string {
 	return `
 provider "fly" {
-  api_token = "mock-token"
-  api_url   = "` + apiURL + `"
+  api_token       = "mock-token"
+  api_url         = "` + apiURL + `"
+  legacy_api_url  = "` + apiURL + `"
 }
 
 resource "fly_app" "test" {

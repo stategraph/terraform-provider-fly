@@ -64,20 +64,22 @@ esac
 func testDSProviderConfig(apiURL string) string {
 	return fmt.Sprintf(`
 provider "fly" {
-  api_token = "mock-token"
-  api_url   = %q
+  api_token       = "mock-token"
+  api_url         = %q
+  legacy_api_url  = %q
 }
-`, apiURL)
+`, apiURL, apiURL)
 }
 
 func testDSProviderConfigWithFlyctl(apiURL, flyctlPath string) string {
 	return fmt.Sprintf(`
 provider "fly" {
-  api_token   = "mock-token"
-  api_url     = %q
-  flyctl_path = %q
+  api_token       = "mock-token"
+  api_url         = %q
+  legacy_api_url  = %q
+  flyctl_path     = %q
 }
-`, apiURL, flyctlPath)
+`, apiURL, apiURL, flyctlPath)
 }
 
 func TestAppDataSource_read(t *testing.T) {

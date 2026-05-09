@@ -55,8 +55,9 @@ func TestNetworkPolicyResource_lifecycle(t *testing.T) {
 
 	config := `
 provider "fly" {
-  api_token = "mock-token"
-  api_url   = "` + server.URL + `"
+  api_token       = "mock-token"
+  api_url         = "` + server.URL + `"
+  legacy_api_url  = "` + server.URL + `"
 }
 
 resource "fly_app" "test" {

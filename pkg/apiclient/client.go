@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	DefaultBaseURL = "https://api.machines.dev/v1"
+	DefaultBaseURL       = "https://api.machines.dev/v1"
+	DefaultLegacyBaseURL = "https://api.fly.io/v1"
 )
 
 // DryRunError is returned when the client is in dry-run mode instead of executing the request.
@@ -42,6 +43,7 @@ func IsDryRun(err error) bool {
 type Client struct {
 	token          string
 	baseURL        string
+	legacyBaseURL  string
 	httpClient     *http.Client
 	userAgent      string
 	limiter        *rate.Limiter
@@ -65,17 +67,22 @@ func WithBaseURL(url string) ClientOption {
 	return func(c *Client) { c.baseURL = url }
 }
 
+func WithLegacyBaseURL(url string) ClientOption {
+	return func(c *Client) { c.legacyBaseURL = url }
+}
+
 func WithHTTPClient(hc *http.Client) ClientOption {
 	return func(c *Client) { c.httpClient = hc }
 }
 
 func NewClient(token, version string, opts ...ClientOption) *Client {
 	c := &Client{
-		token:      token,
-		baseURL:    DefaultBaseURL,
-		httpClient: &http.Client{Timeout: 2 * time.Minute},
-		userAgent:  fmt.Sprintf("terraform-provider-fly/%s", version),
-		limiter:    rate.NewLimiter(rate.Limit(10), 10), // 10 req/s with burst of 10
+		token:         token,
+		baseURL:       DefaultBaseURL,
+		legacyBaseURL: DefaultLegacyBaseURL,
+		httpClient:    &http.Client{Timeout: 2 * time.Minute},
+		userAgent:     fmt.Sprintf("terraform-provider-fly/%s", version),
+		limiter:       rate.NewLimiter(rate.Limit(10), 10), // 10 req/s with burst of 10
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -180,6 +187,11 @@ func (c *Client) doJSONWithRetry(ctx context.Context, method, url string, body a
 
 func (c *Client) restURL(path string) string {
 	return c.baseURL + path
+}
+
+// legacyURL targets the Fly Web API host for endpoints not served by the Machines API.
+func (c *Client) legacyURL(path string) string {
+	return c.legacyBaseURL + path
 }
 
 func formatDryRunHTTP(method, url string, body any) string {

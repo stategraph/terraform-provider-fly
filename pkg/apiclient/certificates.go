@@ -9,7 +9,7 @@ import (
 
 func (c *Client) AddCertificate(ctx context.Context, appName string, req apimodels.AddCertificateRequest) (*apimodels.Certificate, error) {
 	var cert apimodels.Certificate
-	err := c.doJSONWithRetry(ctx, "POST", c.restURL(fmt.Sprintf("/apps/%s/certificates", appName)), req, &cert)
+	err := c.doJSONWithRetry(ctx, "POST", c.legacyURL(fmt.Sprintf("/apps/%s/certificates", appName)), req, &cert)
 	if err != nil {
 		return nil, fmt.Errorf("adding certificate for app %s: %w", appName, err)
 	}
@@ -18,7 +18,7 @@ func (c *Client) AddCertificate(ctx context.Context, appName string, req apimode
 
 func (c *Client) GetCertificate(ctx context.Context, appName, hostname string) (*apimodels.Certificate, error) {
 	var cert apimodels.Certificate
-	err := c.doJSONWithRetry(ctx, "GET", c.restURL(fmt.Sprintf("/apps/%s/certificates/%s", appName, hostname)), nil, &cert)
+	err := c.doJSONWithRetry(ctx, "GET", c.legacyURL(fmt.Sprintf("/apps/%s/certificates/%s", appName, hostname)), nil, &cert)
 	if err != nil {
 		return nil, fmt.Errorf("getting certificate %s for app %s: %w", hostname, appName, err)
 	}
@@ -26,7 +26,7 @@ func (c *Client) GetCertificate(ctx context.Context, appName, hostname string) (
 }
 
 func (c *Client) DeleteCertificate(ctx context.Context, appName, hostname string) error {
-	err := c.doJSONWithRetry(ctx, "DELETE", c.restURL(fmt.Sprintf("/apps/%s/certificates/%s", appName, hostname)), nil, nil)
+	err := c.doJSONWithRetry(ctx, "DELETE", c.legacyURL(fmt.Sprintf("/apps/%s/certificates/%s", appName, hostname)), nil, nil)
 	if err != nil {
 		return fmt.Errorf("deleting certificate %s for app %s: %w", hostname, appName, err)
 	}
@@ -37,7 +37,7 @@ func (c *Client) ListCertificates(ctx context.Context, appName string) ([]apimod
 	var resp struct {
 		Certificates []apimodels.Certificate `json:"certificates"`
 	}
-	err := c.doJSONWithRetry(ctx, "GET", c.restURL(fmt.Sprintf("/apps/%s/certificates", appName)), nil, &resp)
+	err := c.doJSONWithRetry(ctx, "GET", c.legacyURL(fmt.Sprintf("/apps/%s/certificates", appName)), nil, &resp)
 	if err != nil {
 		return nil, fmt.Errorf("listing certificates for app %s: %w", appName, err)
 	}
@@ -46,7 +46,7 @@ func (c *Client) ListCertificates(ctx context.Context, appName string) ([]apimod
 
 func (c *Client) AddACMECertificate(ctx context.Context, appName string, req apimodels.ACMECertificateRequest) (*apimodels.Certificate, error) {
 	var cert apimodels.Certificate
-	err := c.doJSONWithRetry(ctx, "POST", c.restURL(fmt.Sprintf("/apps/%s/certificates/acme", appName)), req, &cert)
+	err := c.doJSONWithRetry(ctx, "POST", c.legacyURL(fmt.Sprintf("/apps/%s/certificates/acme", appName)), req, &cert)
 	if err != nil {
 		return nil, fmt.Errorf("requesting ACME certificate for app %s: %w", appName, err)
 	}
@@ -55,7 +55,7 @@ func (c *Client) AddACMECertificate(ctx context.Context, appName string, req api
 
 func (c *Client) AddCustomCertificate(ctx context.Context, appName string, req apimodels.CustomCertificateRequest) (*apimodels.Certificate, error) {
 	var cert apimodels.Certificate
-	err := c.doJSONWithRetry(ctx, "POST", c.restURL(fmt.Sprintf("/apps/%s/certificates/custom", appName)), req, &cert)
+	err := c.doJSONWithRetry(ctx, "POST", c.legacyURL(fmt.Sprintf("/apps/%s/certificates/custom", appName)), req, &cert)
 	if err != nil {
 		return nil, fmt.Errorf("importing custom certificate for app %s: %w", appName, err)
 	}
@@ -63,7 +63,7 @@ func (c *Client) AddCustomCertificate(ctx context.Context, appName string, req a
 }
 
 func (c *Client) DeleteACMECertificate(ctx context.Context, appName, hostname string) error {
-	err := c.doJSONWithRetry(ctx, "DELETE", c.restURL(fmt.Sprintf("/apps/%s/certificates/%s/acme", appName, hostname)), nil, nil)
+	err := c.doJSONWithRetry(ctx, "DELETE", c.legacyURL(fmt.Sprintf("/apps/%s/certificates/%s/acme", appName, hostname)), nil, nil)
 	if err != nil {
 		return fmt.Errorf("deleting ACME certificate %s for app %s: %w", hostname, appName, err)
 	}
@@ -71,7 +71,7 @@ func (c *Client) DeleteACMECertificate(ctx context.Context, appName, hostname st
 }
 
 func (c *Client) DeleteCustomCertificate(ctx context.Context, appName, hostname string) error {
-	err := c.doJSONWithRetry(ctx, "DELETE", c.restURL(fmt.Sprintf("/apps/%s/certificates/%s/custom", appName, hostname)), nil, nil)
+	err := c.doJSONWithRetry(ctx, "DELETE", c.legacyURL(fmt.Sprintf("/apps/%s/certificates/%s/custom", appName, hostname)), nil, nil)
 	if err != nil {
 		return fmt.Errorf("deleting custom certificate %s for app %s: %w", hostname, appName, err)
 	}
@@ -80,7 +80,7 @@ func (c *Client) DeleteCustomCertificate(ctx context.Context, appName, hostname 
 
 func (c *Client) CheckCertificate(ctx context.Context, appName, hostname string) (*apimodels.Certificate, error) {
 	var cert apimodels.Certificate
-	err := c.doJSONWithRetry(ctx, "POST", c.restURL(fmt.Sprintf("/apps/%s/certificates/%s/check", appName, hostname)), nil, &cert)
+	err := c.doJSONWithRetry(ctx, "POST", c.legacyURL(fmt.Sprintf("/apps/%s/certificates/%s/check", appName, hostname)), nil, &cert)
 	if err != nil {
 		return nil, fmt.Errorf("checking certificate %s for app %s: %w", hostname, appName, err)
 	}

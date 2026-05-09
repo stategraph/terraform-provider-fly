@@ -23,11 +23,12 @@ type FlyProvider struct {
 }
 
 type FlyProviderModel struct {
-	APIToken   types.String `tfsdk:"api_token"`
-	APIURL     types.String `tfsdk:"api_url"`
-	OrgSlug    types.String `tfsdk:"org_slug"`
-	FlyctlPath types.String `tfsdk:"flyctl_path"`
-	DryRun     types.Bool   `tfsdk:"dry_run"`
+	APIToken     types.String `tfsdk:"api_token"`
+	APIURL       types.String `tfsdk:"api_url"`
+	LegacyAPIURL types.String `tfsdk:"legacy_api_url"`
+	OrgSlug      types.String `tfsdk:"org_slug"`
+	FlyctlPath   types.String `tfsdk:"flyctl_path"`
+	DryRun       types.Bool   `tfsdk:"dry_run"`
 }
 
 func New(version string) func() provider.Provider {
@@ -52,6 +53,10 @@ func (p *FlyProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *
 			},
 			"api_url": schema.StringAttribute{
 				Description: "Fly.io Machines API base URL. Defaults to https://api.machines.dev/v1. Can also be set via FLY_API_URL.",
+				Optional:    true,
+			},
+			"legacy_api_url": schema.StringAttribute{
+				Description: "Fly.io legacy Web API base URL, used for certificates, network policies, and OIDC tokens. Defaults to https://api.fly.io/v1. Can also be set via FLY_LEGACY_API_URL.",
 				Optional:    true,
 			},
 			"org_slug": schema.StringAttribute{
@@ -94,9 +99,17 @@ func (p *FlyProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		apiURL = os.Getenv("FLY_API_URL")
 	}
 
+	legacyAPIURL := config.LegacyAPIURL.ValueString()
+	if legacyAPIURL == "" {
+		legacyAPIURL = os.Getenv("FLY_LEGACY_API_URL")
+	}
+
 	var opts []apiclient.ClientOption
 	if apiURL != "" {
 		opts = append(opts, apiclient.WithBaseURL(apiURL))
+	}
+	if legacyAPIURL != "" {
+		opts = append(opts, apiclient.WithLegacyBaseURL(legacyAPIURL))
 	}
 
 	client := apiclient.NewClient(token, p.version, opts...)

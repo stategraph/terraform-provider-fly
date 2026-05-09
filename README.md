@@ -65,7 +65,7 @@ resource "fly_volume" "data" {
 
 The provider talks to Fly.io through two backends:
 
-**REST API** for core infrastructure — apps, machines, volumes, secrets, certificates, network policies, and snapshots. These go directly to `api.machines.dev` with rate limiting and automatic retry.
+**REST API** for core infrastructure — apps, machines, volumes, secrets, certificates, network policies, and snapshots. Apps, machines, volumes, secrets, and snapshots go to `api.machines.dev`; certificates, network policies, and OIDC tokens go to the legacy `api.fly.io` host. Both are rate-limited with automatic retry.
 
 **flyctl CLI** for everything else — IPs, WireGuard, orgs, managed Postgres, Redis, Tigris, extensions, tokens. The provider shells out to `flyctl` with `--json` and parses the output. You need flyctl installed for these resources.
 
@@ -152,7 +152,8 @@ terraform import fly_ip_address.v6 my-app/ip-id
 | Attribute | Env var | Description |
 |-----------|---------|-------------|
 | `api_token` | `FLY_API_TOKEN` | API token (required) |
-| `api_url` | `FLY_API_URL` | API base URL (default: `https://api.machines.dev/v1`) |
+| `api_url` | `FLY_API_URL` | Machines API base URL (default: `https://api.machines.dev/v1`) |
+| `legacy_api_url` | `FLY_LEGACY_API_URL` | Legacy Web API base URL for certificates, network policies, OIDC (default: `https://api.fly.io/v1`) |
 | `org_slug` | `FLY_ORG` | Default organization |
 | `flyctl_path` | `FLYCTL_PATH` | Path to flyctl binary (default: search PATH) |
 | `dry_run` | `FLY_DRY_RUN` | Preview commands without executing them (see below) |
