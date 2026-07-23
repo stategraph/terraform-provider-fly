@@ -35,6 +35,14 @@ jobs:
         with:
           go-version-file: go.mod
 
+      # On PATH for GoReleaser's `go generate` before-hook, which runs
+      # tfplugindocs to render the provider docs. tfplugindocs exports the
+      # schema from Terraform and will otherwise download a CLI via hc-install,
+      # whose signature check fails on HashiCorp's expired signing key.
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
       - name: Determine next version
         id: version
         run: |
