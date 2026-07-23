@@ -33,6 +33,59 @@ func TestExecutor_RunJSON(t *testing.T) {
 	}
 }
 
+func TestExecutor_RunJSON_stripsInstallBanner(t *testing.T) {
+	// The flyctl shim prints a one-time install banner to stdout on first
+	// invocation, ahead of the JSON. Reproduces the exact output seen from
+	// `flyctl ips list --json` on a cold runner.
+	banner := "flyctl was installed successfully to /home/runner/.fly/bin/flyctl\n" +
+		"Run 'flyctl --help' to get started\n"
+
+	mock := NewMockRunner(map[string]MockResponse{
+		"ips list -a my-app --json": {
+			Stdout: banner + `[{"ID":"ip_5nxp28qm78r2q6vl","Address":"2a09:8280:1::87:d7ac:0","Type":"v6"}]`,
+		},
+	})
+
+	exec := NewExecutorWithRunner("test-token", mock)
+
+	var got []struct {
+		ID      string `json:"ID"`
+		Address string `json:"Address"`
+		Type    string `json:"Type"`
+	}
+	err := exec.RunJSON(context.Background(), &got, "ips", "list", "-a", "my-app")
+	if err != nil {
+		t.Fatalf("unexpected error parsing banner-prefixed output: %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("got %d ips, want 1", len(got))
+	}
+	if got[0].ID != "ip_5nxp28qm78r2q6vl" {
+		t.Errorf("got ID %q, want %q", got[0].ID, "ip_5nxp28qm78r2q6vl")
+	}
+}
+
+func TestTrimToJSON(t *testing.T) {
+	cases := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"object no preamble", `{"a":1}`, `{"a":1}`},
+		{"array no preamble", `[1,2]`, `[1,2]`},
+		{"install banner then array", "flyctl was installed successfully\n[1,2]", "[1,2]"},
+		{"banner then object", "noise\nRun 'flyctl --help'\n{\"a\":1}", `{"a":1}`},
+		{"no json at all", "plain text", "plain text"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := string(trimToJSON([]byte(c.in))); got != c.want {
+				t.Errorf("trimToJSON(%q) = %q, want %q", c.in, got, c.want)
+			}
+		})
+	}
+}
+
 func TestExecutor_RunJSON_error(t *testing.T) {
 	mock := NewMockRunner(map[string]MockResponse{
 		"orgs show nonexistent --json": {

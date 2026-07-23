@@ -31,7 +31,7 @@ func TestIPAddressResource_lifecycle(t *testing.T) {
 
 	// Mock flyctl for IP operations.
 	flyctlPath := createMockFlyctl(t, map[string]flyctlMockResponse{
-		"ips allocate-v4 -a ip-test-app --shared": {
+		"ips allocate-v4 -a ip-test-app --yes --shared": {
 			Stdout: "Allocated 66.241.124.1\n",
 		},
 		"ips list -a ip-test-app --json": {

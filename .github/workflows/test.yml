@@ -28,6 +28,13 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      # Provide a Terraform binary on PATH so terraform-plugin-testing does not
+      # try to download and verify one itself. hc-install's signature check
+      # fails when HashiCorp's release signing key is expired, which broke this
+      # job independent of any code change.
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
       - run: go test ./... -v -count=1
 
   acceptance:
