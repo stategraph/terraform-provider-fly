@@ -1,6 +1,7 @@
 package flyctl
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -122,11 +123,26 @@ func (e *Executor) runJSON(ctx context.Context, mut bool, target any, args ...st
 		return err
 	}
 	if target != nil && len(result.Stdout) > 0 {
-		if err := json.Unmarshal(result.Stdout, target); err != nil {
+		data := trimToJSON(result.Stdout)
+		if err := json.Unmarshal(data, target); err != nil {
 			return fmt.Errorf("parsing flyctl JSON output: %w (output: %s)", err, string(result.Stdout))
 		}
 	}
 	return nil
+}
+
+// trimToJSON drops any preamble flyctl writes to stdout before the JSON
+// payload. The flyctl shim prints a one-time install banner ("flyctl was
+// installed successfully to ...") on first invocation, and flyctl also emits
+// update notices from time to time; either would otherwise be fed to
+// json.Unmarshal along with the JSON and cause a parse error. flyctl --json
+// output always begins with '{' or '[', so parsing is resumed from the first
+// of those.
+func trimToJSON(b []byte) []byte {
+	if i := bytes.IndexAny(b, "{["); i >= 0 {
+		return b[i:]
+	}
+	return b
 }
 
 // Run executes a flyctl command and returns the result.
