@@ -15,6 +15,12 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      # Same as the Test workflow: provide Terraform so terraform-plugin-testing
+      # does not self-install (hc-install fails on HashiCorp's expired signing
+      # key). Without this the test job fails and blocks the release job.
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
       - run: go test ./... -v -count=1
 
   release:
